@@ -353,7 +353,13 @@ def _reap() -> None:
 # ---------------------------------------------------------------------------
 
 @app.get("/api/health")
-def health() -> dict:
+def health(deep: bool = False) -> dict:
+    """Credential report.
+
+    The default call is local-only so host health checks (Render, k8s, …) answer
+    instantly.  ``?deep=1`` additionally resolves the Kaggle account over the
+    network, which is the full end-to-end credential check.
+    """
     from pipeline.runner import _kaggle_cmd, kaggle_username  # noqa: PLC0415
     kaggle_dir = Path.home() / ".kaggle"
     creds = {
@@ -372,10 +378,13 @@ def health() -> dict:
     except Exception as exc:  # noqa: BLE001
         creds["kaggle_cli"] = f"missing ({exc})"
     # Network call: resolves (and thereby validates) the account, if any.
-    try:
-        creds["kaggle_account"] = kaggle_username() or False
-    except Exception:  # noqa: BLE001
-        creds["kaggle_account"] = False
+    if deep:
+        try:
+            creds["kaggle_account"] = kaggle_username() or False
+        except Exception:  # noqa: BLE001
+            creds["kaggle_account"] = False
+    else:
+        creds["kaggle_account"] = os.environ.get("KAGGLE_USERNAME") or None
     have_kaggle = bool(
         (creds["kaggle_username"] and creds["kaggle_key"])
         or creds["kaggle_api_token"] or creds["kaggle_access_token_file"]

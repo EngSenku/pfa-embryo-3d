@@ -168,8 +168,9 @@ build never sees them.
 
 ### f. Smoke test
 
-1. Open the web app → `GET /api/health` must report `"ok": true` (with
-   `creds.kaggle_account` naming the resolved Kaggle account).
+1. Open the web app → `GET /api/health` must report `"ok": true` (fast,
+   local-only check). `GET /api/health?deep=1` additionally resolves the Kaggle
+   account over the network (`creds.kaggle_account`).
 2. Press **Plan** with the default (case 1) form → you should see
    `registration` + `reconstruct`.
 3. Press **Dry run (prepare only)** → status reaches `done` in a few seconds
