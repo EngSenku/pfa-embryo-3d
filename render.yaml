@@ -18,7 +18,6 @@ services:
     region: frankfurt
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
-    autoDeploy: true
     envVars:
       - key: PFA_RUNS_DIR
         value: /data/pfa-runs

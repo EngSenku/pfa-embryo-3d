@@ -1,6 +1,7 @@
-# Hugging Face Space image: the web form + the pipeline runner.
+# Web tier image: the form + the pipeline runner.  Deploys unchanged to Render
+# (Docker web service), a Hugging Face Docker Space, Koyeb, Cloud Run, etc.
 #
-# The Space itself is light — it fills in parameters, pushes notebooks to the
+# The web tier is light — it fills in parameters, pushes notebooks to the
 # researcher's Kaggle account with the Kaggle API and watches Hugging Face for
 # the artifacts.  The notebooks bootstrap their own environment on the Kaggle
 # side, so this image needs no GPU and no scientific stack.
