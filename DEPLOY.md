@@ -41,7 +41,7 @@ Why this split is the professional choice for a research pipeline:
                │  background worker
                ▼
              Kaggle API ──► kernel per notebook (GPU when needed)
-               │                  │ reads HF_TOKEN from Kaggle Secrets
+               │                  │ HF_TOKEN injected into the private kernel
                │                  ▼
                │        Hugging Face Hub
                │        volumes/<id>/ slices/<id>/ viewers/<id>/ runs/<id>/
@@ -107,29 +107,31 @@ the researcher's disk.
 
 > The Kaggle account that runs the kernels may be **different** from the Hugging
 > Face account that owns the repositories — they only need to be wired together
-> through the `HF_TOKEN` Kaggle secret in step (d).
+> through the `HF_TOKEN` handling in step (d).
 
-### d. Kaggle-side secret
+### d. Kaggle-side credentials
 
-In the **same Kaggle account that will run the kernels**, add
-**Settings → Add-ons → Secrets → New secret**: name `HF_TOKEN`, the Hugging Face
-token above. Every notebook reads it before touching the Hub
-(`os.environ.get("HF_TOKEN")` → `UserSecretsClient()`), so without it the first
-push fails with `HF_TOKEN unavailable`.
+The runner **injects `HF_TOKEN` into every private kernel it pushes** (a
+one-cell `os.environ` preamble). This is required because Kaggle's push API
+cannot attach account secrets to a freshly created kernel. The kernel is
+private, the value is never printed, and nothing about it is mirrored to the
+Hub.
+
+Kaggle Secrets are still supported as a fallback for notebooks you run by hand:
+**Settings → Add-ons → Secrets → New secret**, name `HF_TOKEN`. Every notebook
+reads `os.environ["HF_TOKEN"]` first and then `UserSecretsClient()`, so either
+path works.
 
 Also make sure **GPU** is enabled on that Kaggle account for the GPU stages.
 
 ### e. Deploy the web app (free)
 
-**Option 1 — Render (recommended, no PRO, no card, no GitHub):**
+**Option 1 — Render from GitHub (recommended):**
 
-A public, anonymously-clonable mirror of this repo is published at
-<https://huggingface.co/datasets/senku111/pfa-source>, so Render can build
-straight from that URL.
-
-1. <https://dashboard.render.com> → sign up (email is fine; no card).
-2. **New → Web Service → Public Git Repository**, URL:
-   `https://huggingface.co/datasets/senku111/pfa-source`
+1. Push this repo to GitHub (the project is at
+   <https://github.com/EngSenku/pfa-embryo-3d>).
+2. <https://dashboard.render.com> → **New → Web Service → Public Git
+   Repository**, URL: `https://github.com/<you>/pfa-embryo-3d`.
 3. Runtime **Docker**, plan **Free**, nearest region, health check
    `/api/health`.
 4. Add environment variables:
@@ -137,25 +139,24 @@ straight from that URL.
    * `KAGGLE_API_TOKEN` (or `KAGGLE_USERNAME` + `KAGGLE_KEY`)
    * `PFA_SHARED_REPO` = `senku111/embryo-3d`
    * `PFA_RUNS_DIR` = `/data/pfa-runs`
-5. **Create Web Service**, wait for the first build (~3–5 min), open the URL.
+5. **Create Web Service**. Render may ask for card verification: the plan stays
+   **$0/month** and the $1 authorization is released, it is not a charge.
+6. Wait for the first build (~3–5 min), open the URL, and confirm
+   `GET /api/version` returns the current `APP_VERSION`.
 
-Publish code changes to the mirror with:
-
-```bash
-export HF_TOKEN=hf_...
-tools/publish_source.sh                  # single clean commit, no stale PDF
-```
-
-then click **Manual Deploy → Deploy latest commit** in Render (public-URL
-services do not auto-deploy).
-
-*Have a GitHub account?* Push the repo there instead and use the included
-[`render.yaml`](render.yaml) Blueprint (**New → Blueprint**) — same service,
-with auto-deploy on push.
+After a `git push`, use **Manual Deploy → Deploy latest commit** (public-URL
+services do not always auto-deploy). The included [`render.yaml`](render.yaml)
+also works as a Blueprint if the repo is connected through the GitHub provider
+(auto-deploy on push).
 
 Notes: Render injects `$PORT` (the Dockerfile honours it), free services sleep
 after ~15 min idle (first visit ~30–50 s), and the disk is ephemeral — run state
 is mirrored to `runs/<id>/` on the Hub and auto-resumed, so this is safe.
+
+> The Hugging Face source mirror
+> (<https://huggingface.co/datasets/senku111/pfa-source>) remains useful as an
+> anonymously clonable archive, but Render rejects that URL. Use GitHub or an
+> image registry as the Render source.
 
 **Option 2 — Hugging Face Space (only if the account has PRO):**
 
@@ -239,7 +240,7 @@ anything fails the run with the log path.
 ```
 [ ] Render web service created from the public mirror (or the GitHub Blueprint)
 [ ] Web-app env vars: HF_TOKEN + KAGGLE_API_TOKEN  (or KAGGLE_USERNAME + KAGGLE_KEY)
-[ ] Kaggle secret HF_TOKEN in the executing account + GPU enabled
+[ ] Kaggle GPU enabled; HF_TOKEN is injected into each pushed private kernel
 [ ] Repos exist (or the researcher's repos are filled in on the form)
 [ ] GET /api/health → ok
 [ ] Dry run → done

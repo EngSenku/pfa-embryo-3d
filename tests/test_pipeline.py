@@ -217,11 +217,33 @@ check("resolved URL is the source of truth", kid == "alice/actually-this-slug", 
 check("gpu on when requested", _captured["meta"]["enable_gpu"] is True)
 
 
-# --- [8] resume adopts an in-flight kernel instead of pushing a duplicate ---
+# --- [8] a fresh Kaggle kernel receives HF_TOKEN from the orchestrator ---
+# Kaggle's push API cannot attach account secrets, so the runner injects a
+# one-cell preamble.  The value only lands inside the private kernel.
+print("\n[8] HF_TOKEN is injected into the pushed kernel")
+from pipeline.runner import inject_env  # noqa: E402
+
+with tempfile.TemporaryDirectory() as td:
+    p = Path(td) / "n.ipynb"
+    nb = nbf.v4.new_notebook()
+    nb.cells = [nbf.v4.new_code_cell("x = 1")]
+    nbf.write(nb, str(p))
+    check("adds a cell when a token is present", inject_env(p, {"HF_TOKEN": "hf_test"}))
+    nb2 = nbf.read(str(p), as_version=4)
+    first = nb2.cells[0].source
+    check("env cell runs first", first.startswith("import os"), first)
+    check("sets HF_TOKEN as a literal",
+          "os.environ['HF_TOKEN'] = 'hf_test'" in first, first)
+    check("keeps the original notebook", any("x = 1" in c.source for c in nb2.cells[1:]))
+    check("no empty cell for a missing token",
+          not inject_env(p, {"HF_TOKEN": ""})
+          and len(nbf.read(str(p), as_version=4).cells) == 2)
+
+# --- [9] resume adopts an in-flight kernel instead of pushing a duplicate ---
 # A free host can restart the web tier while a Kaggle kernel is still running.
 # Resuming must attach to that kernel (hours of GPU work) rather than submit a
 # second copy of the same stage.
-print("\n[8] resume adopts an in-flight kernel")
+print("\n[9] resume adopts an in-flight kernel")
 import yaml  # noqa: E402
 from pipeline.runner import Runner  # noqa: E402
 

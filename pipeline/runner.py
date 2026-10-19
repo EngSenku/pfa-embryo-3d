@@ -63,6 +63,30 @@ def prepare_notebook(src: Path, dest: Path, params: dict, prune_part_a: bool = F
     return dest
 
 
+def inject_env(nb_path: Path, env: dict[str, str]) -> bool:
+    """Give a notebook that will run as a Kaggle kernel its runtime secrets.
+
+    The Kaggle push API cannot attach account secrets to a *newly created*
+    kernel, and every run pushes a fresh private kernel.  All project notebooks
+    read ``HF_TOKEN`` from ``os.environ`` first, so a one-cell preamble is
+    enough.  The kernel is private and the values are never printed; nothing is
+    written to the run log or mirrored to the Hub.
+
+    Returns ``True`` when a cell was added.
+    """
+    env = {k: v for k, v in env.items() if v}
+    if not env:
+        return False
+    nb = nbf.read(str(nb_path), as_version=4)
+    lines = ["import os"]
+    lines += [f"os.environ[{k!r}] = {v!r}" for k, v in env.items()]
+    cell = nbf.v4.new_code_cell("\n".join(lines))
+    cell.metadata["pfa_injected"] = "env"
+    nb.cells.insert(0, cell)
+    nbf.write(nb, str(nb_path))
+    return True
+
+
 # ---------------------------------------------------------------------------
 # engines
 # ---------------------------------------------------------------------------
@@ -492,6 +516,10 @@ class Runner:
             out = self.nb_dir / f"{stage.name}.executed.ipynb"
             self._engine().execute(prepared, out, stage.params)
             return
+
+        # Kaggle's push API cannot attach account secrets to a fresh kernel.
+        if inject_env(prepared, {"HF_TOKEN": os.environ.get("HF_TOKEN", "")}):
+            self.log("  kaggle: HF_TOKEN injected into the private kernel")
 
         eng = self._engine()
         slug = f"pfa-{self.spec.run_id}-{stage.name}"

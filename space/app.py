@@ -48,6 +48,7 @@ RUNS_DIR = Path(os.environ.get("PFA_RUNS_DIR") or ("/data/pfa-runs" if Path("/da
                                                    else ROOT / "runs"))
 RUNS_DIR.mkdir(parents=True, exist_ok=True)
 LOG_TAIL_LINES = 400
+APP_VERSION = "2026-10-20.2"
 
 app = FastAPI(title="PFA pipeline", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
@@ -366,6 +367,13 @@ def _reap() -> None:
 # routes
 # ---------------------------------------------------------------------------
 
+@app.get("/api/version")
+def version() -> dict:
+    """Which build is answering (lets a deploy be verified without logs)."""
+    return {"version": APP_VERSION,
+            "commit": (os.environ.get("RENDER_GIT_COMMIT") or "")[:12]}
+
+
 @app.get("/api/health")
 def health(deep: bool = False) -> dict:
     """Credential report.
@@ -517,7 +525,7 @@ def _mount() -> None:
 
 @app.get("/api")
 def api_index() -> dict:
-    return {"endpoints": ["/api/health", "/api/specimens", "/api/plan", "/api/runs",
+    return {"endpoints": ["/api/version", "/api/health", "/api/specimens", "/api/plan", "/api/runs",
                           "/api/runs/{run_id}", "/api/runs/{run_id}/log"]}
 
 
