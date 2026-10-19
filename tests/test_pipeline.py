@@ -216,5 +216,46 @@ finally:
 check("resolved URL is the source of truth", kid == "alice/actually-this-slug", kid)
 check("gpu on when requested", _captured["meta"]["enable_gpu"] is True)
 
+
+# --- [8] resume adopts an in-flight kernel instead of pushing a duplicate ---
+# A free host can restart the web tier while a Kaggle kernel is still running.
+# Resuming must attach to that kernel (hours of GPU work) rather than submit a
+# second copy of the same stage.
+print("\n[8] resume adopts an in-flight kernel")
+import yaml  # noqa: E402
+from pipeline.runner import Runner  # noqa: E402
+
+_raw = yaml.safe_load((ROOT / "specs" / "cs17_atlas.yaml").read_text())
+_raw.setdefault("run", {})["mirror_state"] = False   # keep this test offline
+_spec = build_spec(_raw, run_id="run-adopt")
+_rstage = next(s for s in _spec.plan() if s.name == "reconstruct")
+
+_waited = []
+_submitted = []
+
+
+class _FakeEngine:
+    def wait(self, kernel_id):
+        _waited.append(kernel_id)
+
+    def fetch_output(self, kernel_id, log_dir):
+        _waited.append(("fetched", kernel_id))
+
+    def submit(self, *a, **k):  # pragma: no cover - must never be called
+        _submitted.append(a)
+        raise AssertionError("resume must not submit a duplicate kernel")
+
+
+with tempfile.TemporaryDirectory() as _td:
+    _r = Runner(spec=_spec, runs_dir=Path(_td), resume=True)
+    _r.state = {"run_id": _spec.run_id, "status": "running",
+                "stages": {"reconstruct": {"status": "running", "kernel": "u/k"}}}
+    _r._engine = lambda: _FakeEngine()  # type: ignore[method-assign]
+    _r._run_stage(_rstage)
+
+check("adopts the running kernel", _waited[0] == "u/k", _waited)
+check("fetches the adopted kernel's output", ("fetched", "u/k") in _waited, _waited)
+check("never submits a duplicate", not _submitted, _submitted)
+
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)
