@@ -148,4 +148,10 @@ python3 tests/test_pipeline.py      # specs validate, plans are right, defaults 
 ## Deployment
 
 See [DEPLOY.md](DEPLOY.md) for the recommended deployment (Hugging Face Space +
-Kaggle API), the secrets involved and the one-off setup steps.
+Kaggle API), the secrets involved and the one-off setup steps. In short, once the
+account has a PRO plan:
+
+```bash
+export HF_TOKEN=hf_...
+tools/deploy_space.sh senku111/pfa-embryo3d     # create the Space + push
+```
