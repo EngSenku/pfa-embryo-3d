@@ -32,5 +32,9 @@ COPY run_pipeline.py /app/run_pipeline.py
 COPY index5.html     /app/index5.html
 COPY *.ipynb         /app/
 
+# Spaces run the container as a non-root user, so make the scratch/cache dirs
+# writable by anyone (kept last so the pip layer above stays cacheable).
+RUN chmod -R 777 /data
+
 EXPOSE 7860
 CMD ["uvicorn", "space.app:app", "--host", "0.0.0.0", "--port", "7860"]
