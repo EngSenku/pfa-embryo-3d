@@ -13,7 +13,7 @@ Hugging Face Hub as storage.**
 
 | Option | Cost | GPU | Operational burden | Verdict |
 | --- | --- | --- | --- | --- |
-| **HF Space (CPU) → Kaggle API** — this repo | ~0 | in the researcher's own Kaggle account (their quota) | almost none: secrets, then push | **recommended** |
+| **HF Space (CPU) → Kaggle API** — this repo | HF **PRO** (~$9/mo) + ~0 runtime | in the researcher's own Kaggle account (their quota) | almost none: secrets, then push | **recommended** |
 | HF Space with a GPU upgrade (`sdk: docker` + `t4-small`…) | ~$0.6–3.5/h while running | built in | you pay while idle; must move 7 notebooks onto the Space | overkill for a batch pipeline |
 | Kaggle notebook only (no web UI) | 0 | 30 h GPU/week free | researchers must edit YAML by hand | good fallback, not a product |
 | A VM (GCP/AWS/EC2/SageMaker) with the full stack | ~$50+/month | optional | you own the OS, the GPU drivers, the nnU-Net install | wrong scale for this project |
@@ -22,8 +22,9 @@ Hugging Face Hub as storage.**
 Why this split is the professional choice for a research pipeline:
 
 * **the web tier must be cheap and boring** — it only validates a form, fills in
-  parameters, pushes notebooks and polls two public APIs. A free CPU Space
-  covers it.
+  parameters, pushes notebooks and polls two public APIs. A CPU Space
+  covers it (Hugging Face currently gates Docker/Gradio Spaces behind a PRO
+  plan; only Static Spaces are free, and this app needs a server).
 * **the heavy work is bursty and long** — registration, hours of nnU-Net
   training and GPU inference. Kaggle gives researchers GPU hours in *their own*
   account, so the project never bills anyone for an idle GPU.
@@ -111,8 +112,21 @@ Also make sure **GPU** is enabled on that Kaggle account for the GPU stages.
 
 ### e. Build the Space
 
+**Prerequisite:** the account that owns the Space needs a **PRO** plan — Free
+accounts can only create *Static* Spaces, and this app is a server
+(`create_repo` returns HTTP 402 `Payment Required` without PRO). Subscribe at
+<https://huggingface.co/pro>.
+
+Then, from the project root:
+
 ```bash
-cd final_pfa
+export HF_TOKEN=hf_...
+tools/deploy_space.sh senku111/pfa-embryo3d      # create + push
+```
+
+or manually:
+
+```bash
 git init -b main
 git add Dockerfile README.md space pipeline tools specs tests *.ipynb run_pipeline.py index5.html
 git commit -m "PFA pipeline as a Hugging Face Space"
@@ -123,21 +137,24 @@ git push space main
 ```
 
 The `README.md` front matter already declares `sdk: docker`, and the `Dockerfile`
-already copies the project in. The build starts immediately; the Space is a
-free CPU Space (`sdk`/`template` are the only required front-matter fields).
+already copies the project in. The build starts immediately and runs on the free
+`cpu-basic` hardware once PRO is active (`sdk` is the only required front-matter
+field).
 
 Secrets are **Settings → Variables and secrets** — the build never sees them.
 
 ### f. Smoke test
 
-1. Open the Space → `GET /api/health` must report `credentials ready`.
+1. Open the Space → `GET /api/health` must report `"ok": true` (with
+   `creds.kaggle_account` naming the resolved Kaggle account).
 2. Press **Plan** with the default (case 1) form → you should see
    `registration` + `reconstruct`.
 3. Press **Dry run (prepare only)** → status reaches `done` in a few seconds
    without touching Kaggle (registration is skipped when the volume already
    exists).
 4. Press **Run** → the first stage appears as a kernel under
-   `kernels/list?search=pfa-run-`.
+   `kernels/list?search=pfa-`. The kernel slug follows the notebook, so the
+   runner polls the slug Kaggle reports rather than a guessed one.
 
 ---
 

@@ -8,7 +8,7 @@ pinned: false
 tags:
   - pipeline
   - nnunet
-  -3d
+  - 3d
   - segmentation
 ---
 
