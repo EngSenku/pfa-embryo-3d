@@ -121,24 +121,37 @@ Also make sure **GPU** is enabled on that Kaggle account for the GPU stages.
 
 ### e. Deploy the web app (free)
 
-**Option 1 — Render (recommended, no PRO / no card):**
+**Option 1 — Render (recommended, no PRO, no card, no GitHub):**
 
-The repo ships a [`render.yaml`](render.yaml) Blueprint.
+A public, anonymously-clonable mirror of this repo is published at
+<https://huggingface.co/datasets/senku111/pfa-source>, so Render can build
+straight from that URL.
 
-1. Push the project to a GitHub repository (create an empty repo at
-   <https://github.com/new>, then):
-
-   ```bash
-   git remote add origin git@github.com:<you>/pfa-embryo3d.git
-   git push -u origin main
-   ```
-
-2. <https://dashboard.render.com> → **New → Blueprint** → pick the repo.
-3. Render creates the `pfa-embryo3d` Docker web service on the **free** plan.
-4. In the service → **Environment**, set the secrets (marked `sync: false`):
+1. <https://dashboard.render.com> → sign up (email is fine; no card).
+2. **New → Web Service → Public Git Repository**, URL:
+   `https://huggingface.co/datasets/senku111/pfa-source`
+3. Runtime **Docker**, plan **Free**, nearest region, health check
+   `/api/health`.
+4. Add environment variables:
    * `HF_TOKEN`
    * `KAGGLE_API_TOKEN` (or `KAGGLE_USERNAME` + `KAGGLE_KEY`)
-5. Wait for the first build (~3–5 min) and open the service URL.
+   * `PFA_SHARED_REPO` = `senku111/embryo-3d`
+   * `PFA_RUNS_DIR` = `/data/pfa-runs`
+5. **Create Web Service**, wait for the first build (~3–5 min), open the URL.
+
+Publish code changes to the mirror with:
+
+```bash
+export HF_TOKEN=hf_...
+tools/publish_source.sh                  # single clean commit, no stale PDF
+```
+
+then click **Manual Deploy → Deploy latest commit** in Render (public-URL
+services do not auto-deploy).
+
+*Have a GitHub account?* Push the repo there instead and use the included
+[`render.yaml`](render.yaml) Blueprint (**New → Blueprint**) — same service,
+with auto-deploy on push.
 
 Notes: Render injects `$PORT` (the Dockerfile honours it), free services sleep
 after ~15 min idle (first visit ~30–50 s), and the disk is ephemeral — run state

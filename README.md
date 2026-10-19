@@ -149,9 +149,11 @@ python3 tests/test_pipeline.py      # specs validate, plans are right, defaults 
 
 See [DEPLOY.md](DEPLOY.md) for the full setup. In short:
 
-* **Web app** — the repo ships a free [`render.yaml`](render.yaml) Blueprint
-  (Render → New → Blueprint → pick the GitHub repo → set `HF_TOKEN` and
-  `KAGGLE_API_TOKEN`). No credit card; the free tier sleeps when idle.
+* **Web app** — deploy the free Render web service from the public mirror
+  <https://huggingface.co/datasets/senku111/pfa-source> (Render → New → Web
+  Service → Public Git Repository). No PRO, no card, no GitHub. If you prefer
+  GitHub, the included [`render.yaml`](render.yaml) Blueprint does the same.
+  Set `HF_TOKEN` and `KAGGLE_API_TOKEN`; the free tier sleeps when idle.
 * **Storage** — Hugging Face Hub (already wired through `HF_TOKEN`).
 * **Compute** — the researcher's own Kaggle account (GPU quota), via the API.
 
