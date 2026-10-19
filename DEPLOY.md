@@ -237,6 +237,7 @@ anything fails the run with the log path.
 ## 5. Operational checklist
 
 ```
+[ ] Render web service created from the public mirror (or the GitHub Blueprint)
 [ ] Web-app env vars: HF_TOKEN + KAGGLE_API_TOKEN  (or KAGGLE_USERNAME + KAGGLE_KEY)
 [ ] Kaggle secret HF_TOKEN in the executing account + GPU enabled
 [ ] Repos exist (or the researcher's repos are filled in on the form)
