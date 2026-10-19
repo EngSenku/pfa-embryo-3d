@@ -3,139 +3,267 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>PFA · run the embryo 3D pipeline</title>
+<title>PFA · Embryo 3D pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#0e1110; --panel:#151a18; --panel2:#1b211e; --line:#2a322e;
-    --ink:#eef2ec; --dim:#9aa69e; --lime:#d3f28c; --green:#33d68f;
-    --yellow:#f3e23d; --red:#ff5a4f; --blue:#8ec7ff;
-    --r:14px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:
-    radial-gradient(1200px 600px at 12% -10%,#1d2a1e 0%,transparent 60%),
-    radial-gradient(900px 500px at 95% 0%,#182630 0%,transparent 55%),
+:root{
+  --bg:#050606; --ink:#eef1ea; --dim:#8d928a; --faint:#5a5f58;
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+  --lime:#d3f28c; --lime-ink:#1b2410; --yellow:#f3e23d; --red:#ff5a4f; --green:#33d68f;
+  --r-xl:28px; --r-lg:20px; --r-md:14px;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-family:"Outfit","Avenir Next","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;min-height:100vh;color:var(--ink);font-weight:300;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(70% 50% at 50% -10%, rgba(60,72,52,.45), transparent 70%),
+    radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.2px) 0 0/26px 26px,
     var(--bg);
-    color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-  a{color:var(--lime)}
-  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 70px}
-  header.top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:6px}
-  .logo{font-size:26px;font-weight:650;letter-spacing:-.01em}
-  .logo span{color:var(--lime)}
-  .sub{color:var(--dim);font-size:13.5px;max-width:760px;margin:2px 0 22px}
-  .badge{font:12px/1 var(--mono);padding:7px 11px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--dim)}
-  .badge.ok{color:#0d1b12;background:var(--green);border-color:transparent;font-weight:600}
-  .badge.warn{color:#201a04;background:var(--yellow);border-color:transparent;font-weight:600}
-  .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:20px}
-  @media (max-width:980px){.grid{grid-template-columns:1fr}}
-  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
-        border-radius:var(--r);padding:18px 18px 16px;box-shadow:0 18px 40px -30px #000}
-  .card h2{margin:0 0 4px;font-size:16px;letter-spacing:.01em}
-  .card h2 small{display:block;color:var(--dim);font-weight:400;font-size:12.5px;margin-top:3px}
-  section.case{margin-top:14px}
-  .cases{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0 4px}
-  @media (max-width:760px){.cases{grid-template-columns:1fr}}
-  .cases button{text-align:left;background:var(--panel2);border:1px solid var(--line);color:var(--ink);
-    border-radius:11px;padding:11px 12px;cursor:pointer;transition:.15s}
-  .cases button:hover{border-color:#3d4a43;transform:translateY(-1px)}
-  .cases button.on{border-color:var(--lime);box-shadow:0 0 0 1px var(--lime) inset}
-  .case b{display:block;font-size:13.5px}
-  .case i{display:block;font-style:normal;color:var(--dim);font-size:12px;margin-top:3px;line-height:1.4}
-  fieldset{border:1px solid var(--line);border-radius:12px;margin:14px 0 0;padding:12px 14px 14px}
-  legend{color:var(--lime);font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:0 6px}
-  .row{display:grid;gap:12px;margin-top:11px}
-  .row.two{grid-template-columns:1fr 1fr}
-  .row.three{grid-template-columns:1fr 1fr 1fr}
-  @media (max-width:700px){.row.two,.row.three{grid-template-columns:1fr}}
-  label{display:block;font-size:12px;color:var(--dim);margin-bottom:5px}
-  input,select,textarea{width:100%;background:#0f1413;border:1px solid var(--line);color:var(--ink);
-    border-radius:9px;padding:9px 10px;font:13.5px/1.35 var(--mono);outline:none}
-  input:focus,select:focus,textarea:focus{border-color:var(--lime)}
-  textarea{min-height:130px;resize:vertical}
-  .hint{font-size:11.5px;color:var(--dim);margin-top:5px;line-height:1.45}
-  .chk{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:13px;color:var(--ink)}
-  .chk input{width:auto}
-  .hidden{display:none!important}
-  .actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
-  button.act{border:1px solid var(--line);background:var(--panel2);color:var(--ink);border-radius:10px;
-    padding:11px 17px;font-size:14px;cursor:pointer;transition .15s}
-  button.act:hover{border-color:#45524a}
-  button.primary{background:var(--lime);color:#101609;border-color:transparent;font-weight:650}
-  button.primary:hover{filter:brightness(1.06)}
-  button:disabled{opacity:.5;cursor:not-allowed}
-  .stages{margin:14px 0 0;padding:0;list-style:none}
-  .stages li{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);
-    border-radius:10px;margin-bottom:7px;background:#111614;font-size:13px}
-  .dot{width:9px;height:9px;border-radius:50%;background:#3a443e;margin-top:6px;flex:none}
-  .dot.run{background:var(--yellow);animation:p 1.1s infinite}
-  .dot.done{background:var(--green)} .dot.fail{background:var(--red)} .dot.skip{background:#5b6570}
-  @keyframes p{50%{opacity:.35}}
-  .stages em{font-style:normal;color:var(--dim);display:block;font-size:12px}
-  .ok h2{color:var(--lime)}
-  pre.yaml{background:#0b0f0e;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;
-    max-height:340px;font:12px/1.5 var(--mono);color:#cfe3cf;margin:12px 0 0}
-  .state{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
-  .chip{font:11.5px/1 var(--mono);padding:6px 9px;border-radius:999px;background:#111614;border:1px solid var(--line);color:var(--dim)}
-  .chip b{color:var(--ink);font-weight:600}
-  .chip.done b{color:var(--green)} .chip.failed b{color:var(--red)} .chip.running b{color:var(--yellow)}
-  pre.log{background:#090c0b;border:1px solid var(--line);border-radius:10px;padding:10px;height:300px;overflow:auto;
-    font:11.5px/1.55 var(--mono);color:#b9c7bd;white-space:pre-wrap;word-break:break-word;margin:0}
-  .hist{list-style:none;padding:0;margin:8px 0 0;max-height:230px;overflow:auto}
-  .hist li{display:flex;gap:9px;align-items:center;padding:7px 4px;border-bottom:1px solid var(--line);font-size:12.5px;cursor:pointer}
-  .hist li:hover{background:#12171500}
-  .hist .id{font-family:var(--mono);color:var(--dim)}
-  .viewerlink{display:inline-block;margin-top:12px;padding:11px 15px;border-radius:10px;background:var(--lime);
-    color:#101609;text-decoration:none;font-weight:650}
-  .err{color:var(--red);font-size:13px;margin-top:10px}
-  .files{font-size:12px;color:var(--dim);margin-top:14px}
-  code{font-family:var(--mono);background:#111614;border:1px solid var(--line);border-radius:6px;padding:1px 5px}
+  background-attachment:fixed}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+code{font-family:var(--mono);font-size:.84em;background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:#dfe7d3}
+.hidden{display:none!important}
+
+/* ---------- glass ---------- */
+.glass{background:linear-gradient(180deg,rgba(40,44,41,.72),rgba(24,27,25,.78));border:1px solid var(--line);
+  backdrop-filter:blur(22px) saturate(1.1);-webkit-backdrop-filter:blur(22px) saturate(1.1);
+  box-shadow:0 18px 50px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04)}
+.pill{display:inline-flex;align-items:center;gap:9px;height:40px;padding:0 16px;border-radius:999px;font-size:13.5px;white-space:nowrap;
+  background:rgba(34,37,35,.82);border:1px solid var(--line);backdrop-filter:blur(18px);transition:background .2s,border-color .2s}
+a.pill:hover,button.pill:hover{background:rgba(54,58,54,.92)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--faint);flex:none}
+.dot.ok{background:var(--green);box-shadow:0 0 10px rgba(51,214,143,.7)}
+.dot.warn{background:var(--yellow);box-shadow:0 0 10px rgba(243,226,61,.5)}
+.dot.bad{background:var(--red)}
+svg.i{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ---------- top bar ---------- */
+.top{position:sticky;top:0;z-index:40;padding:14px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  background:linear-gradient(180deg,rgba(5,6,6,.92),rgba(5,6,6,.6));backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.brand{font-size:21px;font-weight:400;letter-spacing:-.01em;display:flex;align-items:baseline;gap:8px}
+.brand b{font-weight:500}
+.brand span{color:var(--lime)}
+.brand small{font-size:12px;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-left:6px}
+.spacer{flex:1}
+.top select.pill{appearance:none;-webkit-appearance:none;padding-right:16px;max-width:260px;color:var(--ink);cursor:pointer}
+.top select.pill option{color:#111}
+.pill.lime{background:var(--lime);color:var(--lime-ink);border-color:transparent;font-weight:500}
+.pill.lime:hover{background:#e0f7a8}
+
+/* ---------- hero ---------- */
+.hero{max-width:1320px;margin:0 auto;padding:44px 24px 10px}
+.eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--lime);margin:0 0 12px}
+.hero h1{margin:0;font-weight:200;font-size:clamp(34px,4.6vw,56px);line-height:1.04;letter-spacing:-.02em;max-width:900px}
+.hero h1 em{font-style:normal;color:var(--lime);font-weight:300}
+.hero p{margin:18px 0 0;max-width:760px;color:var(--dim);font-size:15.5px}
+.flow{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px;align-items:center;font-size:13px;color:var(--dim)}
+.flow span.s{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.flow span.s b{font-weight:400;color:var(--ink)}
+.flow svg{color:var(--faint)}
+
+/* ---------- layout ---------- */
+.wrap{max-width:1320px;margin:0 auto;padding:22px 24px 90px;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(380px,.88fr);gap:22px;align-items:start}
+@media (max-width:1060px){.wrap{grid-template-columns:1fr}}
+.col-r{position:sticky;top:78px;display:flex;flex-direction:column;gap:16px;max-height:calc(100vh - 96px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.15) transparent;padding-bottom:4px}
+@media (max-width:1060px){.col-r{position:static;max-height:none;overflow:visible}}
+.col-r::-webkit-scrollbar{width:6px}.col-r::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:6px}
+
+/* ---------- case selector ---------- */
+.cases{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:760px){.cases{grid-template-columns:1fr}}
+.case{position:relative;text-align:left;border-radius:var(--r-lg);padding:16px 16px 15px;background:linear-gradient(180deg,rgba(40,44,41,.7),rgba(26,29,27,.74));
+  border:1px solid var(--line);backdrop-filter:blur(18px);transition:border-color .2s,transform .2s,background .2s}
+.case:hover{border-color:rgba(211,242,140,.35);transform:translateY(-1px)}
+.case .n{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;font-size:13px;background:rgba(255,255,255,.08);color:var(--dim);margin-bottom:12px;transition:.2s}
+.case b{display:block;font-weight:400;font-size:15px;line-height:1.25}
+.case i{display:block;font-style:normal;color:var(--dim);font-size:12.5px;line-height:1.4;margin-top:6px}
+.case.on{border-color:rgba(211,242,140,.7);background:linear-gradient(180deg,rgba(60,72,46,.55),rgba(30,36,26,.7));box-shadow:0 0 0 1px rgba(211,242,140,.22),0 0 40px rgba(211,242,140,.07)}
+.case.on .n{background:var(--lime);color:var(--lime-ink)}
+
+/* ---------- form steps ---------- */
+.steps{margin-top:16px;display:flex;flex-direction:column;gap:14px}
+.step{border-radius:var(--r-xl);padding:22px 24px 24px}
+.step>h3{margin:0 0 4px;font-weight:300;font-size:18px;display:flex;align-items:center;gap:12px}
+.step>h3 .num{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;font-size:12px;font-weight:400;background:rgba(211,242,140,.16);color:var(--lime)}
+.step>.lead{margin:0 0 4px 38px;font-size:12.5px;color:var(--dim)}
+.row{display:grid;gap:14px;margin-top:16px}
+.row.two{grid-template-columns:1fr 1fr}
+.row.three{grid-template-columns:1fr 1fr 1fr}
+@media (max-width:760px){.row.two,.row.three{grid-template-columns:1fr}}
+label{display:block;font-size:12.5px;color:var(--dim);margin-bottom:6px;letter-spacing:.01em}
+label b{color:var(--lime);font-weight:400}
+input,select,textarea{width:100%;background:rgba(0,0,0,.34);border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:11px 13px;
+  font:400 13.5px/1.35 var(--mono);outline:none;transition:border-color .15s,background .15s}
+select{appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:34px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238d928a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center}
+select option{background:#151816;color:var(--ink)}
+input::placeholder,textarea::placeholder{color:var(--faint)}
+input:hover,select:hover,textarea:hover{border-color:var(--line2)}
+input:focus,select:focus,textarea:focus{border-color:rgba(211,242,140,.7);background:rgba(0,0,0,.46)}
+input.bad,select.bad,textarea.bad{border-color:var(--red);background:rgba(255,90,79,.06)}
+textarea{min-height:120px;resize:vertical}
+.hint{font-size:12px;color:var(--dim);margin-top:7px;line-height:1.5}
+.hint b{color:var(--ink);font-weight:400}
+.sw{display:flex;align-items:center;gap:12px;margin-top:16px;cursor:pointer;font-size:13.5px;color:var(--ink);user-select:none}
+.sw label{margin:0;color:var(--ink);font-size:13.5px;cursor:pointer}
+.sw input{position:absolute;opacity:0;width:0;height:0}
+.sw .tr{width:38px;height:22px;border-radius:999px;background:rgba(255,255,255,.14);position:relative;transition:background .2s;flex:none}
+.sw .tr::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
+.sw input:checked + .tr{background:var(--lime)}
+.sw input:checked + .tr::after{transform:translateX(16px);background:var(--lime-ink)}
+.sw input:focus-visible + .tr{outline:2px solid var(--lime);outline-offset:2px}
+.sw.inline{margin-top:0;align-self:end;height:44px}
+.sub{margin-top:18px;padding:16px 16px 18px;border-radius:var(--r-lg);background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.sub .row:first-child{margin-top:0}
+.sub>h4{margin:0 0 2px;font-weight:400;font-size:13px;color:var(--lime);letter-spacing:.08em;text-transform:uppercase}
+
+details.adv{border-radius:var(--r-xl);padding:0}
+details.adv summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:20px 24px;font-size:18px;font-weight:300;border-radius:var(--r-xl)}
+details.adv summary::-webkit-details-marker{display:none}
+details.adv summary small{font-size:12.5px;color:var(--dim);margin-left:auto}
+details.adv summary .chev{transition:transform .2s;color:var(--dim)}
+details.adv[open] summary .chev{transform:rotate(180deg)}
+details.adv .in{padding:0 24px 24px}
+
+/* ---------- action bar ---------- */
+.actionbar{position:sticky;bottom:14px;z-index:30;margin-top:16px;border-radius:24px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{height:44px;padding:0 20px;border-radius:999px;font-size:14px;display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,.08);border:1px solid var(--line);transition:background .2s,transform .1s,opacity .2s}
+.btn:hover{background:rgba(255,255,255,.15)}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--lime);color:var(--lime-ink);border-color:transparent;font-weight:500;padding:0 26px}
+.btn.primary:hover{background:#e0f7a8}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.msgs{flex:1 1 100%;display:flex;flex-direction:column;gap:6px;empty-cells:hide}
+.msgs:empty{display:none}
+.msg{font-size:12.5px;line-height:1.45;padding:8px 12px;border-radius:12px;display:flex;gap:9px;align-items:flex-start}
+.msg svg{margin-top:2px}
+.msg.err{background:rgba(255,90,79,.12);color:#ffb3ac;border:1px solid rgba(255,90,79,.28)}
+.msg.warn{background:rgba(243,226,61,.08);color:#e8dc7a;border:1px solid rgba(243,226,61,.2)}
+
+/* ---------- right: run panel ---------- */
+.panel{border-radius:var(--r-xl);padding:20px 22px 22px}
+.panel h2{margin:0;font-weight:300;font-size:18px;display:flex;align-items:center;gap:10px}
+.panel h2 small{font-size:12px;color:var(--dim);margin-left:auto;font-weight:300}
+.panel .tools{margin-left:auto;display:flex;gap:6px}
+.mini{height:28px;padding:0 11px;border-radius:999px;font-size:12px;color:var(--dim);background:rgba(255,255,255,.07);border:1px solid var(--line);transition:.2s}
+.mini:hover{color:var(--ink);background:rgba(255,255,255,.14)}
+.state{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chip{font:400 12px/1 var(--mono);padding:7px 11px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--dim);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip b{color:var(--ink);font-weight:500}
+.chip.done b{color:var(--green)}.chip.failed b{color:var(--red)}.chip.running b{color:var(--yellow)}
+.chip.failed{border-color:rgba(255,90,79,.35)}
+.prog{margin-top:16px}
+.prog .bar{height:6px;border-radius:6px;background:rgba(255,255,255,.1);overflow:hidden}
+.prog .bar i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--green),var(--lime));transition:width .5s}
+.prog.fail .bar i{background:var(--red)}
+.prog .t{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--dim)}
+.stages{margin:14px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px;counter-reset:s}
+.stages li{display:flex;gap:12px;align-items:flex-start;padding:11px 13px;border-radius:14px;background:rgba(0,0,0,.26);border:1px solid var(--line);font-size:13.5px;transition:border-color .2s}
+.stages li .dot{margin-top:7px}
+.stages li .dot.run{background:var(--yellow);animation:p 1.1s infinite}
+.stages li .dot.done{background:var(--green)}.stages li .dot.fail{background:var(--red)}.stages li .dot.skip{background:#5b6570}
+.stages li.cur{border-color:rgba(243,226,61,.35)}
+.stages li.err{border-color:rgba(255,90,79,.4)}
+.stages b{font-weight:400}
+.stages em{font-style:normal;display:block;color:var(--dim);font-size:11.5px;font-family:var(--mono);margin-top:2px;word-break:break-all}
+.stages .gpu{font-size:10.5px;letter-spacing:.08em;padding:2px 7px;border-radius:6px;background:rgba(211,242,140,.16);color:var(--lime);margin-left:6px;vertical-align:1px}
+.stages .empty,.empty{color:var(--faint);font-size:13px;padding:10px 2px;border:0;background:none}
+@keyframes p{50%{opacity:.3}}
+.openbtn{margin-top:16px;display:flex;align-items:center;justify-content:center;gap:10px;height:48px;border-radius:999px;background:var(--lime);color:var(--lime-ink);font-weight:500}
+.openbtn:hover{background:#e0f7a8}
+.runerr{color:#ffb3ac;font-size:13px;margin-top:12px}
+.runerr:empty{display:none}
+.files{font:400 11.5px/1.5 var(--mono);color:var(--dim);margin-top:12px;word-break:break-all}
+.files:empty{display:none}
+pre{margin:0}
+pre.yaml,pre.log{margin-top:14px;border-radius:16px;background:rgba(0,0,0,.42);border:1px solid var(--line);padding:14px 16px;overflow:auto;font:400 12px/1.6 var(--mono);scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
+pre.yaml{max-height:300px;color:#cfe3c0}
+pre.log{height:300px;color:#aebaa8;white-space:pre-wrap;word-break:break-word}
+.hist{list-style:none;padding:0;margin:12px 0 0;display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;scrollbar-width:thin}
+.hist li{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:14px;cursor:pointer;background:rgba(255,255,255,.035);border:1px solid transparent;font-size:13px;transition:.15s}
+.hist li:hover{background:rgba(255,255,255,.08)}
+.hist li.on{border-color:rgba(211,242,140,.5);background:rgba(211,242,140,.06)}
+.hist .meta{min-width:0;flex:1}
+.hist .id{font:400 11.5px var(--mono);color:var(--dim);display:block}
+.hist .nm{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist .st{font-size:11.5px;color:var(--dim);display:flex;align-items:center;gap:7px;flex:none}
+.hist .st.done{color:var(--green)}.hist .st.failed{color:var(--red)}.hist .st.running{color:var(--yellow)}
+.hist .st.done .dot{background:var(--green)}.hist .st.failed .dot{background:var(--red)}.hist .st.running .dot{background:var(--yellow);animation:p 1.1s infinite}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:90;padding:9px 18px;border-radius:999px;background:rgba(18,20,18,.94);border:1px solid var(--line);font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="top">
-    <div class="logo">PFA<span>·</span>embryo&nbsp;3D</div>
-    <div style="flex:1"></div>
-    <span class="badge" id="health">checking credentials…</span>
-    <select class="badge" id="specOpen" style="max-width:230px"><option value="">3D viewer — pick a specimen…</option></select>
-    <a class="badge" href="/viewer/" id="viewerLink">3D viewer</a>
-    <a class="badge" href="/api/docs">API</a>
-  </header>
-  <p class="sub">
-    Build a 3D anatomical model from a embryo specimen: register the sections, train or reuse the
-    nnU-Net group segmenters, and publish <code>viewers/&lt;id&gt;/</code> + <code>volumes/&lt;id&gt;/</code>
-    to Hugging Face. Notebooks run on <b>Kaggle GPUs</b> in your own account; this page only fills in
-    the parameters and watches the run.
+
+<header class="top">
+  <div class="brand"><b>PFA<span>·</span>Embryo</b> 3D <small>Pipeline</small></div>
+  <div class="spacer"></div>
+  <span class="pill" id="healthPill"><span class="dot" id="healthDot"></span><span id="health">checking credentials…</span></span>
+  <select class="pill" id="specOpen" aria-label="Open a specimen in the viewer"><option value="">Open specimen in viewer…</option></select>
+  <a class="pill lime" href="/viewer/" id="viewerLink"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg><span id="viewerLabel">3D viewer</span></a>
+  <a class="pill" href="/api/docs">API</a>
+</header>
+
+<section class="hero">
+  <p class="eyebrow">Reconstruction pipeline</p>
+  <h1>From serial sections to a <em>publishable 3D atlas</em>.</h1>
+  <p>
+    Register the sections, train or reuse the nnU-Net group segmenters, and publish
+    <code>viewers/&lt;id&gt;/</code> + <code>volumes/&lt;id&gt;/</code> to Hugging Face.
+    Notebooks run on <b style="font-weight:400;color:var(--ink)">Kaggle GPUs</b> in your own account; this page only fills in the parameters and watches the run.
   </p>
+  <div class="flow" aria-label="Pipeline stages">
+    <span class="s"><b>Register</b> sections</span>
+    <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    <span class="s"><b>Train</b> / reuse nnU-Net</span>
+    <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    <span class="s"><b>Segment</b> 4 groups</span>
+    <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    <span class="s"><b>Reconstruct</b> meshes</span>
+    <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    <span class="s"><b>Publish</b> to Hugging Face</span>
+  </div>
+</section>
 
-  <div class="grid">
-    <!-- ============================== FORM ============================== -->
-    <div class="card">
-      <h2>New run<small>Pick a case, fill the identifiers, then <b>Plan</b> to preview the notebooks.</small></h2>
+<main class="wrap">
 
-      <div class="cases">
-        <button class="on" data-case="pretrained"><b>1 · Stage with pretrained models</b><i>CS17 atlas specimen, project models. Nothing to supply.</i></button>
-        <button data-case="custom"><b>2 · Other stage, own model</b><i>You already trained an nnU-Net: give its HF model repo.</i></button>
-        <button data-case="train"><b>3 · Other stage, train first</b><i>Atlas labels → datasets → 4 group models → reconstruction.</i></button>
-      </div>
+  <!-- ============================== FORM ============================== -->
+  <div class="col-l">
 
-      <fieldset>
-        <legend>Specimen</legend>
+    <div class="cases" role="tablist" aria-label="Run type">
+      <button class="case on" data-case="pretrained" role="tab"><span class="n">1</span><b>Stage with pretrained models</b><i>CS17 atlas specimen, project models. Nothing to supply.</i></button>
+      <button class="case" data-case="custom" role="tab"><span class="n">2</span><b>Other stage, own model</b><i>You already trained an nnU-Net: give its HF model repo.</i></button>
+      <button class="case" data-case="train" role="tab"><span class="n">3</span><b>Other stage, train first</b><i>Atlas labels → datasets → 4 group models → reconstruction.</i></button>
+    </div>
+
+    <div class="steps">
+
+      <section class="step glass">
+        <h3><span class="num">1</span>Specimen</h3>
+        <p class="lead">Identity and display name of the specimen.</p>
         <div class="row three">
-          <div><label for="specimen_id">Specimen ID *</label><input id="specimen_id" value="CS17-6521" /></div>
-          <div><label for="stage">Carnegie stage</label><input id="stage" value="CS17" /></div>
-          <div><label for="atlas_specimen_id">Atlas specimen code</label><input id="atlas_specimen_id" value="6521" /></div>
+          <div><label for="specimen_id">Specimen ID <b>*</b></label><input id="specimen_id" value="CS17-6521" autocomplete="off" spellcheck="false" /></div>
+          <div><label for="stage">Carnegie stage</label><input id="stage" value="CS17" autocomplete="off" /></div>
+          <div><label for="atlas_specimen_id">Atlas specimen code</label><input id="atlas_specimen_id" value="6521" autocomplete="off" /></div>
         </div>
         <div class="row">
           <div><label for="description">Description (shown in the viewer)</label>
             <input id="description" value="Carnegie Stage 17, specimen 6521" /></div>
         </div>
-        <div class="hint">This ID becomes <code>volumes/&lt;id&gt;/</code>, <code>slices/&lt;id&gt;/</code> and
-          <code>viewers/&lt;id&gt;/</code> in the shared dataset — it is how the viewer finds the bundle.</div>
-      </fieldset>
+        <div class="hint">This ID becomes <code>volumes/&lt;id&gt;/</code>, <code>slices/&lt;id&gt;/</code> and <code>viewers/&lt;id&gt;/</code> in the shared dataset — it is how the viewer finds the bundle.</div>
+      </section>
 
-      <fieldset>
-        <legend>Input &amp; registration</legend>
+      <section class="step glass">
+        <h3><span class="num">2</span>Input &amp; registration</h3>
+        <p class="lead">Where the grey-level volume comes from and how it is aligned.</p>
         <div class="row two">
           <div><label for="input_format">Input</label>
             <select id="input_format">
@@ -151,7 +279,7 @@
         </div>
         <div class="row two" id="atlasRow">
           <div><label for="atlas_grey_tif_url">Atlas grey tif URL (blank = build from stage + code)</label>
-            <input id="atlas_grey_tif_url" placeholder="http://3datlas.3dembryo.nl/3DAtlas_CS17-6521-grey-v2016-01.tif" />
+            <input id="atlas_grey_tif_url" placeholder="http://3datlas.3dembryo.nl/3DAtlas_CS17-6521-grey-v2016-01.tif" spellcheck="false" />
             <div class="hint">Probed against the live Atlas server; leave empty unless it is non-standard.</div></div>
           <div><label for="registration_mode">Registration mode</label>
             <select id="registration_mode"><option>always</option><option>never</option><option>auto</option></select></div>
@@ -159,24 +287,24 @@
         <div class="row three hidden" id="rawRow">
           <div><label for="raw_mode">Source</label>
             <select id="raw_mode"><option value="url">downloadable URL / HF file</option><option value="local_archive">archive on disk</option></select></div>
-          <div><label for="raw_url">Archive URL</label><input id="raw_url" placeholder="https://…/sections.zip" /></div>
+          <div><label for="raw_url">Archive URL</label><input id="raw_url" placeholder="https://…/sections.zip" spellcheck="false" /></div>
           <div><label for="registration_mode2">Registration mode</label>
             <select id="registration_mode2"><option>always</option><option>never</option><option>auto</option></select></div>
         </div>
         <div class="row two hidden" id="rawRow2">
-          <div><label for="raw_xy_um">XY pixel size (µm) *</label><input id="raw_xy_um" type="number" step="0.001" placeholder="4.479" /></div>
-          <div><label for="raw_z_um">Section spacing (µm) *</label><input id="raw_z_um" type="number" step="0.1" placeholder="10" /></div>
+          <div><label for="raw_xy_um">XY pixel size (µm) <b>*</b></label><input id="raw_xy_um" type="number" step="0.001" placeholder="4.479" /></div>
+          <div><label for="raw_z_um">Section spacing (µm) <b>*</b></label><input id="raw_z_um" type="number" step="0.1" placeholder="10" /></div>
         </div>
         <div class="row two">
-          <div><label for="hf_repo">Shared HF dataset (volumes + viewers)</label><input id="hf_repo" value="senku111/embryo-3d" />
-            <div class="hint">Point it at a dataset <b>your Hugging Face token can write to</b> —
-              the default belongs to the original project.</div></div>
-          <div class="chk"><input type="checkbox" id="hf_private" /><label for="hf_private" style="margin:0">private dataset (private specimens)</label></div>
+          <div><label for="hf_repo">Shared HF dataset (volumes + viewers)</label><input id="hf_repo" value="senku111/embryo-3d" spellcheck="false" />
+            <div class="hint">Point it at a dataset <b>your Hugging Face token can write to</b> — the default belongs to the original project.</div></div>
+          <label class="sw inline" for="hf_private"><input type="checkbox" id="hf_private" /><span class="tr"></span>private dataset (private specimens)</label>
         </div>
-      </fieldset>
+      </section>
 
-      <fieldset>
-        <legend>Segmentation models</legend>
+      <section class="step glass">
+        <h3><span class="num">3</span>Segmentation models</h3>
+        <p class="lead">Reuse the project's networks, bring your own, or train from the Atlas labels.</p>
         <div class="row three">
           <div><label for="model_source">Model source</label>
             <select id="model_source">
@@ -184,18 +312,18 @@
               <option value="custom">custom — researcher-supplied HF model repo</option>
               <option value="train">train — build datasets + train the group models</option>
             </select></div>
-          <div><label for="training_repo">Training checkpoints (HF model repo)</label><input id="training_repo" value="senku111/atlas-cs17-4groups-nnunet-training" /></div>
-          <div><label for="dataset_repo">Dataset / groups manifest (HF dataset)</label><input id="dataset_repo" value="senku111/atlas-cs17-4groups-dataset" /></div>
+          <div><label for="training_repo">Training checkpoints (HF model repo)</label><input id="training_repo" value="senku111/atlas-cs17-4groups-nnunet-training" spellcheck="false" /></div>
+          <div><label for="dataset_repo">Dataset / groups manifest (HF dataset)</label><input id="dataset_repo" value="senku111/atlas-cs17-4groups-dataset" spellcheck="false" /></div>
         </div>
 
-        <div id="customBox" class="hidden">
+        <div id="customBox" class="sub hidden">
+          <h4>Custom nnU-Net</h4>
           <div class="row two">
-            <div><label for="model_repo">Your nnU-Net model repo (HF model) *</label>
-              <input id="model_repo" placeholder="my-user/atlas-cs12-nnunet" />
-              <div class="hint">Must hold the <code>groupNN_* / nnUNet_results / Dataset7xx_* / fold_0/…</code>
-                tree plus a groups manifest, unless you paste one below.</div></div>
+            <div><label for="model_repo">Your nnU-Net model repo (HF model) <b>*</b></label>
+              <input id="model_repo" placeholder="my-user/atlas-cs12-nnunet" spellcheck="false" />
+              <div class="hint">Must hold the <code>groupNN_* / nnUNet_results / Dataset7xx_* / fold_0/…</code> tree plus a groups manifest, unless you paste one below.</div></div>
             <div><label for="groups_manifest_in_repo">Groups manifest path in that repo</label>
-              <input id="groups_manifest_in_repo" placeholder="(blank = auto)" /></div>
+              <input id="groups_manifest_in_repo" placeholder="(blank = auto)" spellcheck="false" /></div>
           </div>
           <div class="row two">
             <div><label for="norm_lo">Normalisation low</label><input id="norm_lo" type="number" step="0.001" placeholder="(from manifest)" /></div>
@@ -203,13 +331,13 @@
           </div>
           <div class="row">
             <div><label for="groups_json">Inline groups manifest (optional — YAML/JSON)</label>
-              <textarea id="groups_json" placeholder="[0, 1, 2, 3]&#10;# or the full all_groups_manifest.json"></textarea>
-              <div class="hint">Shorthand <code>[0,1,2,3]</code> means one group per entry, or paste the
-                full <code>all_groups_manifest.json</code> (groups + normalisation).</div></div>
+              <textarea id="groups_json" placeholder="[0, 1, 2, 3]&#10;# or the full all_groups_manifest.json" spellcheck="false"></textarea>
+              <div class="hint">Shorthand <code>[0,1,2,3]</code> means one group per entry, or paste the full <code>all_groups_manifest.json</code> (groups + normalisation).</div></div>
           </div>
         </div>
 
-        <div id="trainBox" class="hidden">
+        <div id="trainBox" class="sub hidden">
+          <h4>Training</h4>
           <div class="row two">
             <div><label for="dataset_source">Training data</label>
               <select id="dataset_source">
@@ -228,86 +356,97 @@
             <div><label for="split_seed">Split seed</label><input id="split_seed" type="number" value="42" /></div>
             <div><label for="holdout_fraction">Held-out fraction</label><input id="holdout_fraction" type="number" step="0.05" value="0.2" /></div>
           </div>
-          <div class="hint">Training a full stage takes many GPU-hours. Interrupt it and press
-            <b>Run with resume</b> to continue from the last completed stage — checkpoints are kept on Hugging Face.</div>
+          <div class="hint">Training a full stage takes many GPU-hours. Interrupt it and press <b>Run with resume</b> to continue from the last completed stage — checkpoints are kept on Hugging Face.</div>
         </div>
-      </fieldset>
+      </section>
 
-      <fieldset>
-        <legend>Reconstruction</legend>
+      <section class="step glass">
+        <h3><span class="num">4</span>Reconstruction</h3>
+        <p class="lead">Mesh extraction and publishing options.</p>
         <div class="row three">
           <div><label for="fg_threshold">Foreground threshold</label><input id="fg_threshold" type="number" step="0.05" placeholder="0.40" /></div>
           <div><label for="max_voxels">Max voxels</label><input id="max_voxels" type="number" placeholder="600000000" /></div>
-          <div><label for="names">Names JSON (optional)</label><input id="names" placeholder='{"17": "Heart"}' /></div>
+          <div><label for="names">Names JSON (optional)</label><input id="names" placeholder='{"17": "Heart"}' spellcheck="false" /></div>
         </div>
-        <div class="chk"><input type="checkbox" id="disable_tta" checked /><label for="disable_tta" style="margin:0">disable TTA (4–8× faster; untick for the final high-quality run)</label></div>
-        <div class="chk"><input type="checkbox" id="push_to_hf" checked /><label for="push_to_hf" style="margin:0">publish the bundle to Hugging Face</label></div>
-      </fieldset>
+        <label class="sw" for="disable_tta"><input type="checkbox" id="disable_tta" checked /><span class="tr"></span>disable TTA (4–8× faster; untick for the final high-quality run)</label>
+        <label class="sw" for="push_to_hf"><input type="checkbox" id="push_to_hf" checked /><span class="tr"></span>publish the bundle to Hugging Face</label>
+      </section>
 
-      <fieldset>
-        <legend>Execution</legend>
+      <section class="step glass">
+        <h3><span class="num">5</span>Execution</h3>
+        <p class="lead">Where the notebooks run.</p>
         <div class="row three">
           <div><label for="engine">Engine</label>
             <select id="engine"><option value="kaggle">kaggle — push each notebook as a GPU kernel</option>
               <option value="local">local — execute here with papermill</option></select></div>
           <div><label for="timeout_s">Kernel timeout (s)</label><input id="timeout_s" type="number" value="21600" /></div>
-          <div><label for="run_id">Run ID (optional, for resume)</label><input id="run_id" placeholder="run-1a2b3c4d" /></div>
+          <div><label for="run_id">Run ID (optional, for resume)</label><input id="run_id" placeholder="run-1a2b3c4d" spellcheck="false" /></div>
         </div>
-        <div class="chk"><input type="checkbox" id="kaggle_gpu" checked /><label for="kaggle_gpu" style="margin:0">request GPU</label></div>
-        <div class="chk"><input type="checkbox" id="kaggle_internet" checked /><label for="kaggle_internet" style="margin:0">allow internet (needed to reach Hugging Face)</label></div>
-      </fieldset>
+        <label class="sw" for="kaggle_gpu"><input type="checkbox" id="kaggle_gpu" checked /><span class="tr"></span>request GPU</label>
+        <label class="sw" for="kaggle_internet"><input type="checkbox" id="kaggle_internet" checked /><span class="tr"></span>allow internet (needed to reach Hugging Face)</label>
+      </section>
 
-      <fieldset>
-        <legend>Advanced — raw run spec</legend>
-        <div class="row">
-          <div><label for="yaml">When non-empty this YAML replaces the whole form (see <code>specs/*.yaml</code>)</label>
-            <textarea id="yaml" placeholder="title: My run&#10;specimen:&#10;  id: CS12-8505A&#10;  stage: CS12&#10;  atlas_specimen_id: '8505A'&#10;models:&#10;  source: custom&#10;  model_repo: my-user/atlas-cs12"></textarea></div>
+      <details class="adv glass">
+        <summary>Advanced — raw run spec<small>optional</small><svg class="i chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></summary>
+        <div class="in">
+          <label for="yaml">When non-empty this YAML replaces the whole form (see <code>specs/*.yaml</code>)</label>
+          <textarea id="yaml" spellcheck="false" placeholder="title: My run&#10;specimen:&#10;  id: CS12-8505A&#10;  stage: CS12&#10;  atlas_specimen_id: '8505A'&#10;models:&#10;  source: custom&#10;  model_repo: my-user/atlas-cs12"></textarea>
         </div>
-      </fieldset>
-
-      <div class="actions">
-        <button class="act" id="planBtn">Plan</button>
-        <button class="act" id="dryBtn">Dry run (prepare only)</button>
-        <button class="act primary" id="runBtn">Run</button>
-        <button class="act" id="resumeBtn" title="Restart the selected run and skip completed stages">Run with resume</button>
-      </div>
-      <div class="err" id="formErr"></div>
+      </details>
     </div>
 
-    <!-- ============================== STATUS ============================== -->
-    <div>
-      <div class="card">
-        <div class="state" id="stateChips">
-          <span class="chip">no run yet</span>
-        </div>
-        <ul class="stages" id="stages"></ul>
-        <a class="viewerlink hidden" id="viewerLink2" href="#">Open the 3D model →</a>
-        <div class="err" id="runErr"></div>
-        <div class="files" id="runFiles"></div>
-      </div>
-
-      <div class="card" style="margin-top:20px">
-        <h2>Plan / spec<small>The exact YAML that will be saved next to the executed notebooks.</small></h2>
-        <pre class="yaml" id="yamlOut">(press Plan)</pre>
-      </div>
-
-      <div class="card" style="margin-top:20px">
-        <h2>Run log<small>Tail of <code>runs/&lt;run_id&gt;/run.log</code></small></h2>
-        <pre class="log" id="logOut">(no run yet)</pre>
-      </div>
-
-      <div class="card" style="margin-top:20px">
-        <h2>History</h2>
-        <ul class="hist" id="hist"><li><span class="id">no runs yet</span></li></ul>
-      </div>
+    <div class="actionbar glass">
+      <button class="btn" id="planBtn"><svg class="i" viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h9"/></svg>Plan</button>
+      <button class="btn" id="dryBtn">Dry run (prepare only)</button>
+      <div class="spacer"></div>
+      <button class="btn" id="resumeBtn" title="Restart the selected run and skip completed stages"><svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.7-6M20 4v4.5h-4.5"/></svg>Run with resume</button>
+      <button class="btn primary" id="runBtn"><svg class="i" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg>Run</button>
+      <div class="msgs" id="msgs"></div>
     </div>
+    <div class="hidden" id="formErr"></div>
   </div>
-</div>
+
+  <!-- ============================== STATUS ============================== -->
+  <aside class="col-r">
+    <div class="panel glass">
+      <h2>Run status</h2>
+      <div class="state" id="stateChips"><span class="chip">no run yet</span></div>
+      <div class="prog hidden" id="prog"><div class="bar"><i id="progFill"></i></div><div class="t"><span id="progTxt"></span><span id="progPct"></span></div></div>
+      <ul class="stages" id="stages"><li class="empty">Press <b style="font-weight:400">Plan</b> to preview the notebooks that will run.</li></ul>
+      <a class="openbtn hidden" id="viewerLink2" href="#">Open the 3D model <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <div class="runerr" id="runErr"></div>
+      <div class="files" id="runFiles"></div>
+    </div>
+
+    <div class="panel glass">
+      <h2>Plan / spec<span class="tools"><button class="mini" data-copy="yamlOut">Copy</button></span></h2>
+      <p style="margin:4px 0 0;font-size:12.5px;color:var(--dim)">The exact YAML that will be saved next to the executed notebooks.</p>
+      <pre class="yaml" id="yamlOut">(press Plan)</pre>
+    </div>
+
+    <div class="panel glass">
+      <h2>Run log<span class="tools"><button class="mini" data-copy="logOut">Copy</button></span></h2>
+      <p style="margin:4px 0 0;font-size:12.5px;color:var(--dim)">Tail of <code>runs/&lt;run_id&gt;/run.log</code></p>
+      <pre class="log" id="logOut">(no run yet)</pre>
+    </div>
+
+    <div class="panel glass">
+      <h2>History</h2>
+      <ul class="hist" id="hist"><li class="empty">no runs yet</li></ul>
+    </div>
+  </aside>
+</main>
+
+<div class="toast" id="toast"></div>
 
 <script>
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
-let currentRun = null, timer = null, selectedRun = null;
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+let currentRun = null, timer = null;
+
+let toastT;
+function toast(t) { const n = $("toast"); n.textContent = t; n.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => n.classList.remove("show"), 1600); }
 
 /* ---------------- cases ---------------- */
 const CASES = {
@@ -329,9 +468,9 @@ const CASES = {
     dataset_source: "atlas", engine: "kaggle"
   }
 };
-document.querySelectorAll(".cases button").forEach(b => b.addEventListener("click", () => {
-  document.querySelectorAll(".cases button").forEach(x => x.classList.remove("on"));
-  b.classList.add("on");
+document.querySelectorAll(".case").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".case").forEach(x => { x.classList.remove("on"); x.setAttribute("aria-selected", "false"); });
+  b.classList.add("on"); b.setAttribute("aria-selected", "true");
   Object.entries(CASES[b.dataset.case]).forEach(([k, v]) => { const node = $(k); if (node && node.type !== "checkbox") node.value = v; });
   syncUI();
 }));
@@ -342,9 +481,51 @@ function syncUI() {
   $("atlasRow").classList.toggle("hidden", fmt !== "atlas_am_volume");
   $("customBox").classList.toggle("hidden", src !== "custom");
   $("trainBox").classList.toggle("hidden", src !== "train");
+  updateWarns();
 }
-["input_format", "model_source", "dataset_source", "engine"].forEach(id => $(id).addEventListener("change", syncUI));
-syncUI();
+["input_format", "model_source", "dataset_source", "engine", "hf_repo", "disable_tta", "kaggle_gpu", "kaggle_internet"].forEach(id => $(id).addEventListener("change", syncUI));
+$("hf_repo").addEventListener("input", syncUI);
+
+/* ---------------- validation + advisories ---------------- */
+const ICON_ERR = '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v5M12 16v.1"/></svg>';
+const ICON_WARN = '<svg class="i" viewBox="0 0 24 24"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17.2v.1"/></svg>';
+let lastErrs = [];
+function renderMsgs() {
+  const w = computeWarns();
+  $("msgs").innerHTML = lastErrs.map(m => `<div class="msg err">${ICON_ERR}<span>${esc(m)}</span></div>`).join("") +
+    w.map(m => `<div class="msg warn">${ICON_WARN}<span>${m}</span></div>`).join("");
+}
+function computeWarns() {
+  if ($("yaml").value.trim()) return ["A raw spec is set under <b>Advanced</b> — it replaces the whole form."];
+  const w = [], src = $("model_source").value;
+  if ($("hf_repo").value.trim() === "senku111/embryo-3d") w.push("The default dataset belongs to the original project — make sure your Hugging Face token can write to it, or point to your own.");
+  if (src === "train") w.push("Training a full stage takes many GPU-hours. Use <b>Run with resume</b> to continue if it is interrupted.");
+  if ($("engine").value === "local") w.push("Local engine runs every notebook on this server with papermill — expect it to be slow without a GPU.");
+  if ($("engine").value === "kaggle" && !$("kaggle_internet").checked) w.push("Kaggle internet is off — the kernels cannot reach Hugging Face.");
+  if ($("engine").value === "kaggle" && !$("kaggle_gpu").checked && src !== "pretrained") w.push("GPU is off — segmentation and training will be extremely slow.");
+  if (!$("disable_tta").checked) w.push("TTA enabled: 4–8× slower inference (best quality for the final run).");
+  return w;
+}
+function updateWarns() { renderMsgs(); }
+function validate() {
+  document.querySelectorAll(".bad").forEach(n => n.classList.remove("bad"));
+  const errs = [];
+  if ($("yaml").value.trim()) { lastErrs = errs; renderMsgs(); return errs; }
+  const need = (id, msg) => { if (!$(id).value.trim()) { $(id).classList.add("bad"); errs.push(msg); } };
+  need("specimen_id", "Specimen ID is required.");
+  if ($("specimen_id").value.trim() && /[\s/\\]/.test($("specimen_id").value.trim())) { $("specimen_id").classList.add("bad"); errs.push("Specimen ID cannot contain spaces or slashes (it becomes a folder name)."); }
+  if ($("input_format").value === "raw_section_archive") {
+    if ($("raw_mode").value === "url") need("raw_url", "Archive URL is required for a downloadable archive.");
+    need("raw_xy_um", "XY pixel size (µm) is required for raw sections.");
+    need("raw_z_um", "Section spacing (µm) is required for raw sections.");
+  }
+  if ($("model_source").value === "custom") need("model_repo", "Your nnU-Net model repo is required for a custom model.");
+  lastErrs = errs; renderMsgs();
+  if (errs.length) { const f = document.querySelector(".bad"); if (f) { f.scrollIntoView({ block: "center", behavior: "smooth" }); f.focus({ preventScroll: true }); } }
+  return errs;
+}
+document.querySelectorAll("input,select,textarea").forEach(n => n.addEventListener("input", () => n.classList.remove("bad")));
+$("yaml").addEventListener("input", updateWarns);
 
 /* ---------------- form -> payload ---------------- */
 function num(id) { const v = $(id).value.trim(); if (v === "") return null; const n = Number(v); return Number.isNaN(n) ? null : n; }
@@ -392,7 +573,10 @@ function payload(extra = {}) {
   if (chk("disable_tta")) p.disable_tta = true;
   return Object.assign(p, extra);
 }
-function showErr(msg) { $("formErr").textContent = msg || ""; }
+function showErr(msg) {
+  lastErrs = msg ? [msg] : [];
+  renderMsgs();
+}
 
 async function api(path, opts) {
   const r = await fetch(path, Object.assign({ headers: { "Content-Type": "application/json" } }, opts));
@@ -403,58 +587,74 @@ async function api(path, opts) {
 
 /* ---------------- plan ---------------- */
 $("planBtn").addEventListener("click", async () => {
-  showErr(""); $("planBtn").disabled = true;
+  if (validate().length) return;
+  $("planBtn").disabled = true;
   try {
     const res = await api("/api/plan", { method: "POST", body: JSON.stringify(payload()) });
     $("yamlOut").textContent = YAML(res.spec);
     $("stages").innerHTML = "";
     res.stages.forEach(s => {
-      const li = el("li", "", `<span class="dot"></span><span><b>${s.name}</b>${s.gpu ? " · GPU" : ""} — ${s.label || ""}<em>${s.notebook}</em></span>`);
+      const li = el("li", "", `<span class="dot"></span><span><b>${esc(s.name)}</b>${s.gpu ? '<span class="gpu">GPU</span>' : ""}${s.label ? " — " + esc(s.label) : ""}<em>${esc(s.notebook)}</em></span>`);
       $("stages").appendChild(li);
     });
+    $("prog").classList.add("hidden");
+    toast("Plan ready");
   } catch (e) { showErr(e.message); }
   $("planBtn").disabled = false;
 });
 
 /* ---------------- run ---------------- */
 async function startRun(extra) {
-  showErr(""); $("runErr").textContent = "";
+  if (validate().length) return;
+  $("runErr").textContent = "";
   try {
     const res = await api("/api/runs", { method: "POST", body: JSON.stringify(payload(extra)) });
     currentRun = res.run_id;
     if (!$("run_id").value.trim()) $("run_id").value = currentRun;
+    timer = null;
     poll();
     refreshHistory();
+    toast(extra && extra.dry_run ? "Dry run started" : "Run started");
   } catch (e) { showErr(e.message); }
 }
 $("runBtn").addEventListener("click", () => startRun({}));
 $("dryBtn").addEventListener("click", () => startRun({ dry_run: true }));
 $("resumeBtn").addEventListener("click", () => {
   const rid = $("run_id").value.trim() || currentRun;
-  if (!rid) { showErr("paste the run id you want to resume (or run once first)"); return; }
+  if (!rid) { showErr("Paste the run id you want to resume (or run once first)."); return; }
   startRun({ run_id: rid });
 });
 
 const STATUS_DOT = { done: "done", failed: "fail", running: "run", skipped: "skip", pending: "" };
 function renderRun(data) {
   const st = data.state || {};
-  const chips = [
-    `<span class="chip">run <b>${st.run_id || currentRun}</b></span>`,
-    `<span class="chip ${st.status || ""}">status <b>${st.status || "…"}</b></span>`,
-    st.specimen_id ? `<span class="chip">specimen <b>${st.specimen_id}</b></span>` : "",
-    st.engine ? `<span class="chip">engine <b>${st.engine}</b></span>` : "",
-    st.error ? `<span class="chip failed">error <b>${st.error}</b></span>` : ""
+  $("stateChips").innerHTML = [
+    `<span class="chip">run <b>${esc(st.run_id || currentRun)}</b></span>`,
+    `<span class="chip ${esc(st.status || "")}">status <b>${esc(st.status || "…")}</b></span>`,
+    st.specimen_id ? `<span class="chip">specimen <b>${esc(st.specimen_id)}</b></span>` : "",
+    st.engine ? `<span class="chip">engine <b>${esc(st.engine)}</b></span>` : "",
+    st.error ? `<span class="chip failed" title="${esc(st.error)}">error <b>${esc(st.error)}</b></span>` : ""
   ].join("");
-  $("stateChips").innerHTML = chips;
   $("runErr").textContent = st.error || "";
   const stages = st.stages || {};
-  if (Object.keys(stages).length) {
-    $("stages").innerHTML = Object.entries(stages).map(([name, s]) =>
-      `<li><span class="dot ${STATUS_DOT[s.status] || ""}"></span><span><b>${name}</b> — ${s.status}` +
+  const entries = Object.entries(stages);
+  if (entries.length) {
+    $("stages").innerHTML = entries.map(([name, s]) =>
+      `<li class="${s.status === "running" ? "cur" : ""} ${s.status === "failed" ? "err" : ""}"><span class="dot ${STATUS_DOT[s.status] || ""}"></span><span><b>${esc(name)}</b> — ${esc(s.status)}` +
       (s.seconds ? ` · ${Math.round(s.seconds)}s` : "") +
-      (s.error ? `<em>${s.error}</em>` : "") + (s.kernel ? `<em>${s.kernel}</em>` : "") + `</span></li>`).join("");
+      (s.error ? `<em>${esc(s.error)}</em>` : "") + (s.kernel ? `<em>${esc(s.kernel)}</em>` : "") + `</span></li>`).join("");
+    const doneN = entries.filter(([, s]) => s.status === "done" || s.status === "skipped").length;
+    const pct = Math.round((doneN / entries.length) * 100);
+    $("prog").classList.remove("hidden");
+    $("prog").classList.toggle("fail", st.status === "failed");
+    $("progFill").style.width = pct + "%";
+    $("progTxt").textContent = `${doneN} of ${entries.length} stages`;
+    $("progPct").textContent = pct + "%";
   }
-  if (data.log) $("logOut").textContent = data.log;
+  if (data.log) {
+    const lg = $("logOut"); const near = lg.scrollHeight - lg.scrollTop - lg.clientHeight < 40;
+    lg.textContent = data.log; if (near) lg.scrollTop = lg.scrollHeight;
+  }
   const done = st.status === "done";
   const v = data.viewer || (done && st.specimen_id ? { specimen: st.specimen_id, url: `/viewer/?specimen=${st.specimen_id}` } : null);
   $("viewerLink2").classList.toggle("hidden", !v);
@@ -480,25 +680,32 @@ async function refreshHistory() {
     const data = await api("/api/runs");
     if (!data.runs.length) return;
     $("hist").innerHTML = data.runs.map(r =>
-      `<li data-run="${r.run_id}"><span class="chip ${r.status}"><b>${r.status}</b></span>` +
-      `<span class="id">${r.run_id}</span><span>${r.specimen_id || ""} ${r.title ? "· " + r.title : ""}</span></li>`).join("");
+      `<li data-run="${esc(r.run_id)}" class="${r.run_id === currentRun ? "on" : ""}"><span class="meta"><span class="nm">${esc(r.specimen_id || "")}${r.title ? " · " + esc(r.title) : ""}</span><span class="id">${esc(r.run_id)}</span></span>` +
+      `<span class="st ${esc(r.status)}"><span class="dot"></span>${esc(r.status)}</span></li>`).join("");
     $("hist").querySelectorAll("li[data-run]").forEach(li => li.addEventListener("click", async () => {
-      currentRun = li.dataset.run; $("run_id").value = currentRun; timer = null; await poll();
+      currentRun = li.dataset.run; $("run_id").value = currentRun; timer = null;
+      $("hist").querySelectorAll("li").forEach(x => x.classList.toggle("on", x === li));
+      await poll();
     }));
   } catch {}
 }
 
+/* ---------------- copy buttons ---------------- */
+document.querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", () => {
+  navigator.clipboard?.writeText($(b.dataset.copy).textContent).then(() => toast("Copied"), () => toast("Copy failed"));
+}));
+
 /* ---------------- health + specimens ---------------- */
 (async function init() {
+  syncUI();
   try {
     const h = await api("/api/health");
-    const b = $("health");
-    if (h.ok) { b.className = "badge ok"; b.textContent = "credentials ready"; }
-    else { b.className = "badge warn"; b.textContent = "missing: " + Object.entries(h.creds).filter(([, v]) => v !== true).map(([k]) => k).join(", "); }
-  } catch (e) { $("health").textContent = "health check failed"; }
+    if (h.ok) { $("healthDot").className = "dot ok"; $("health").textContent = "credentials ready"; }
+    else { $("healthDot").className = "dot warn"; $("health").textContent = "missing: " + Object.entries(h.creds).filter(([, v]) => v !== true).map(([k]) => k).join(", "); }
+  } catch (e) { $("healthDot").className = "dot bad"; $("health").textContent = "health check failed"; }
   try {
     const s = await api("/api/specimens");
-    if (s.specimens.length) $("viewerLink").textContent = `3D viewer · ${s.specimens.length} specimen(s)`;
+    if (s.specimens.length) $("viewerLabel").textContent = `3D viewer · ${s.specimens.length} specimen${s.specimens.length === 1 ? "" : "s"}`;
     window.__specimens = s.specimens;
     const sel = $("specOpen");
     s.specimens.forEach(x => {
