@@ -249,11 +249,16 @@ class Runner:
         self.run_dir.mkdir(parents=True, exist_ok=True)
         self.nb_dir.mkdir(parents=True, exist_ok=True)
         self.state_path = self.run_dir / "state.json"
-        # Mirror run state to the shared Hub repo so a restarted web tier (free
-        # hosts sleep and lose their disk) can pick a run back up.
-        if self.state_repo is None:
-            self.state_repo = (self.spec.shared_repo
-                               if self.spec.run_cfg.get("mirror_state", True) else None)
+        # Mirror run state to a Hub repo so a restarted web tier (free hosts
+        # sleep and lose their disk) can pick a run back up.  State is kept in
+        # one app-owned repo so it is findable even when a researcher points the
+        # artifacts at their own repository.
+        if self.state_repo is None and self.spec.run_cfg.get("mirror_state", True):
+            self.state_repo = (
+                os.environ.get("PFA_STATE_REPO")
+                or os.environ.get("PFA_SHARED_REPO")
+                or self.spec.shared_repo
+            )
         self._mirror_warned = False
         had_local = self.state_path.exists()
         self.state = self._load_state()

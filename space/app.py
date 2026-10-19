@@ -239,7 +239,17 @@ class RunHandle:
 
 
 def _shared_repo() -> str:
+    """Artifact repo (``volumes/``, ``viewers/``) used by the specimen picker."""
     return os.environ.get("PFA_SHARED_REPO", "senku111/embryo-3d")
+
+
+def _state_repo() -> str:
+    """Where run state is mirrored; must be writable by ``HF_TOKEN``.
+
+    Kept separate from the artifact repo so a researcher can point the artifacts
+    at their own repository while the app still finds run state after a restart.
+    """
+    return os.environ.get("PFA_STATE_REPO") or _shared_repo()
 
 
 def _read_state(run_id: str, hub_fallback: bool = True) -> dict | None:
@@ -252,7 +262,7 @@ def _read_state(run_id: str, hub_fallback: bool = True) -> dict | None:
     # After a free-host restart the disk is gone; state lives on the Hub.
     if hub_fallback:
         try:
-            return hfio.read_json(_shared_repo(), f"runs/{run_id}/state.json", "dataset")
+            return hfio.read_json(_state_repo(), f"runs/{run_id}/state.json", "dataset")
         except Exception:
             return None
     return None
@@ -317,6 +327,10 @@ def resume_run(run_id: str) -> bool:
 
     log_path = RUNS_DIR / run_id / "run.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
+    try:  # keep the earlier log so a restart does not erase the history
+        hfio.download_file(_state_repo(), f"runs/{run_id}/run.log", log_path, "dataset")
+    except Exception:
+        pass
 
     def _work() -> None:
         handle = RunHandle(run_id, log_path)
@@ -339,7 +353,7 @@ def _reap() -> None:
     while True:
         try:
             ids = {d.name for d in RUNS_DIR.iterdir() if d.is_dir() and not d.name.startswith("_")}
-            ids |= set(hfio.list_runs(_shared_repo()))
+            ids |= set(hfio.list_runs(_state_repo()))
             for run_id in ids:
                 if _valid_run_id(run_id):
                     resume_run(run_id)
@@ -438,7 +452,7 @@ def create_run(form: FormSpec) -> dict:
 def list_runs() -> dict:
     ids = {d.name for d in RUNS_DIR.iterdir()
            if d.is_dir() and not d.name.startswith("_")}
-    ids |= set(hfio.list_runs(_shared_repo()))
+    ids |= set(hfio.list_runs(_state_repo()))
     runs = []
     for run_id in sorted(ids, reverse=True):
         state = _read_state(run_id) or {}

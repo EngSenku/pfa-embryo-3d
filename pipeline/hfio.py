@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -84,6 +85,16 @@ def upload_file(repo_id: str, path: str, local_path: str | Path, repo_type: str 
     a.create_repo(repo_id, repo_type=repo_type, exist_ok=True)
     a.upload_file(path_or_fileobj=str(local_path), path_in_repo=path, repo_id=repo_id,
                   repo_type=repo_type, commit_message=commit_message or f"upload {path}")
+
+
+def download_file(repo_id: str, path: str, local_path: str | Path,
+                  repo_type: str = "dataset") -> Path:
+    """Download one Hub file into ``local_path`` (best effort, raises on 404)."""
+    cached = api().hf_hub_download(repo_id=repo_id, filename=path, repo_type=repo_type)
+    dest = Path(local_path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(cached, dest)
+    return dest
 
 
 def list_runs(repo_id: str, repo_type: str = "dataset") -> list[str]:

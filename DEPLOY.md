@@ -227,7 +227,8 @@ anything fails the run with the log path.
   slower and eventually throttled.
 * **Runs storage** — `PFA_RUNS_DIR` (defaults to `/data/pfa-runs` when that
   mount exists, `./runs` otherwise). The authoritative copy of each run's state
-  is mirrored to `runs/<run_id>/` on the Hub.
+  and log is mirrored to `runs/<run_id>/` on the Hub, in `PFA_STATE_REPO`
+  (defaults to `PFA_SHARED_REPO`).
 * **Large shared datasets** — the viewer fetches from the Hub by URL; nothing
   is proxied through the web app, so the web tier stays free.
 
