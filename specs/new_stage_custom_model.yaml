@@ -1,0 +1,64 @@
+# ---------------------------------------------------------------------------
+# New stage, researcher-supplied segmentation model.
+#
+# Use this when the specimen belongs to a Carnegie stage that the project's
+# pretrained CS17 models do not cover, and the researcher has already trained
+# (or otherwise obtained) their own nnU-Net v2 group checkpoints and published
+# them to a Hugging Face *model* repo.
+#
+# What the model repo must contain
+#   * the nnU-Net v2 results tree, e.g.
+#       group00_<DatasetName>/nnUNet_results/Dataset7xx_<DatasetName>/fold_0/...
+#     (one folder per group; the reconstruction notebook discovers the layout)
+#   * a groups manifest (all_groups_manifest.json) describing, per group,
+#     the atlas structure ids -> class index and the training normalisation.
+#     Set models.groups_manifest_in_repo if it is not in the default location.
+#   * OR skip the manifest file and inline everything with models.groups +
+#     models.norm (same schema, useful when the researcher knows it directly).
+#
+#   python3 run_pipeline.py --spec specs/new_stage_custom_model.yaml --engine kaggle
+# ---------------------------------------------------------------------------
+title: "CS12-8505A with a researcher-supplied nnU-Net model"
+
+specimen:
+  id: CS12-8505A
+  stage: CS12
+  atlas_specimen_id: "8505A"
+  description: "Carnegie Stage 12, specimen 8505A"
+
+input:
+  needed: auto
+  format: atlas_am_volume
+  registration_mode: always
+  hf_repo: senku111/embryo-3d
+  hf_private: false
+
+models:
+  source: custom
+  model_repo: my-user/atlas-cs12-nnunet           # HF *model* repo with the checkpoints
+  groups_manifest_in_repo: null                   # null = look in the default locations
+  # --- alternative: inline the manifest instead of shipping one in the repo ---
+  # groups:
+  #   - group_index: 0
+  #     dataset_id: 811
+  #     dataset_name: AtlasCS12Group00
+  #     atlas_ids: [21, 22, 23, 24]
+  #     n_classes: 4
+  #   - group_index: 1
+  #     dataset_id: 812
+  #     dataset_name: AtlasCS12Group01
+  #     atlas_ids: [25, 26, 27]
+  #     n_classes: 3
+  # norm: { lo: 0.0, hi: 1.0 }                      # grey-normalisation range used for training
+
+reconstruction:
+  push_to_hf: true
+  fg_threshold: 0.40
+  # disable_tta: false        # final high-quality run: enable test-time augmentation
+
+run:
+  engine: kaggle
+  kaggle:
+    gpu: true
+    internet: true
+    timeout_s: 21600

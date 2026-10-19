@@ -1,0 +1,15 @@
+# Web layer + orchestration for the PFA Space.
+# Heavy scientific packages are installed by the notebooks themselves on the
+# Kaggle side (they bootstrap their own venv), so the image stays small.
+fastapi>=0.110
+uvicorn[standard]>=0.27
+pydantic>=2.6
+PyYAML>=6.0
+huggingface_hub>=0.23
+papermill>=2.5
+nbformat>=5.9
+ipykernel>=6.25
+kaggle>=2.2
+requests>=2.31
+tqdm>=4.66
+numpy>=1.26

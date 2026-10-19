@@ -1,0 +1,19 @@
+# pipeline artefacts
+runs/
+*.egg-info/
+
+# python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# credentials (never commit)
+kaggle.json
+.env
+*.kaggle.json
+
+# local downloads / build output
+*_dl/
+*.prepared.ipynb

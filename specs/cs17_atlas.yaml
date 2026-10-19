@@ -1,0 +1,38 @@
+# ---------------------------------------------------------------------------
+# Default run: the Carnegie Stage 17 atlas specimen with the project's own
+# pretrained 4-group models.  This reproduces the original pipeline end to end
+# and needs no extra inputs beyond HF_TOKEN (+ Kaggle credentials for the GPU
+# stages).
+#
+#   python3 run_pipeline.py --spec specs/cs17_atlas.yaml --engine kaggle
+# ---------------------------------------------------------------------------
+title: "CS17 atlas specimen 6521 (pretrained models)"
+
+specimen:
+  id: CS17-6521              # volumes/CS17-6521/, slices/CS17-6521/, viewers/CS17-6521/
+  stage: CS17
+  atlas_specimen_id: "6521"
+  description: "Carnegie Stage 17, specimen 6521"
+
+input:
+  needed: auto               # auto: skip registration if volumes/<id>/ already exists on HF
+  format: atlas_am_volume    # use the pre-assembled Atlas grey volume
+  registration_mode: always
+  hf_repo: senku111/embryo-3d
+  hf_private: false
+
+models:
+  source: pretrained         # the project's own CS17 4-group checkpoints
+  training_repo: senku111/atlas-cs17-4groups-nnunet-training
+  dataset_repo: senku111/atlas-cs17-4groups-dataset
+
+reconstruction:
+  push_to_hf: true
+  # names: {"17": "Heart", "20": "Liver"}   # optional display names
+
+run:
+  engine: kaggle
+  kaggle:
+    gpu: true
+    internet: true
+    timeout_s: 21600

@@ -1,0 +1,62 @@
+# ---------------------------------------------------------------------------
+# New stage: train the models first from labelled (Atlas) data, then reconstruct.
+#
+# This is the "I have no model for this stage yet" path.  The runner will:
+#   1. register the specimen (skip with input.needed: false if already done),
+#   2. build the grouped nnU-Net datasets from the Atlas labels
+#      (data-preparation.ipynb) and push them to models.dataset_repo,
+#   3. train one model per group (GPU) and push checkpoints to
+#      models.training_repo,
+#   4. reconstruct the volume + viewer bundle with the fresh checkpoints.
+#
+# Training a full stage takes many GPU-hours; use --resume to continue an
+# interrupted run without retraining completed groups.
+#
+#   python3 run_pipeline.py --spec specs/new_stage_train_from_labels.yaml --engine kaggle
+#
+# If the researcher already has an nnU-Net *raw* dataset (imagesTr/labelsTr)
+# instead of Atlas labels, set models.dataset_source: nnunet_raw and provide
+# models.groups + models.norm; the runner publishes the groups manifest and
+# skips the data-preparation notebook.
+# ---------------------------------------------------------------------------
+title: "CS12-8505A: train 4 groups from Atlas labels, then reconstruct"
+
+specimen:
+  id: CS12-8505A
+  stage: CS12
+  atlas_specimen_id: "8505A"
+  description: "Carnegie Stage 12, specimen 8505A"
+
+input:
+  needed: true               # force registration (the source volume is required for training)
+  format: atlas_am_volume
+  registration_mode: always
+  hf_repo: senku111/embryo-3d
+  hf_private: false
+
+models:
+  source: train
+  dataset_source: atlas      # build the datasets from the Atlas structures (data-preparation.ipynb)
+  dataset_repo: senku111/atlas-cs17-4groups-dataset      # where the built datasets + manifest go
+  training_repo: senku111/atlas-cs17-4groups-nnunet-training   # where the checkpoints go
+  groups: [0, 1, 2, 3]       # which groups to train (and, later, use)
+  n_groups: 4
+  grouping: balanced_contiguous
+  base_dataset_id: 701
+  dataset_name_prefix: AtlasCS12FourGroup
+  split_seed: 42
+  holdout_fraction: 0.20
+  trainer: nnUNetTrainer_250epochs
+  resume_from_checkpoint: true
+
+reconstruction:
+  push_to_hf: true
+  disable_tta: false         # fresh models -> use TTA for the final bundle
+  fg_threshold: 0.40
+
+run:
+  engine: kaggle
+  kaggle:
+    gpu: true
+    internet: true
+    timeout_s: 86400         # a full training run can take a long time
