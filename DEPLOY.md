@@ -8,12 +8,14 @@ or CI.
 
 ## 1. Recommendation
 
-**Hugging Face Space (web form + API) + the Kaggle API for GPU execution + the
-Hugging Face Hub as storage.**
+**Free Docker web app on Render (web form + API) + the Kaggle API for GPU
+execution + the Hugging Face Hub as storage.**
 
 | Option | Cost | GPU | Operational burden | Verdict |
 | --- | --- | --- | --- | --- |
-| **HF Space (CPU) → Kaggle API** — this repo | HF **PRO** (~$9/mo) + ~0 runtime | in the researcher's own Kaggle account (their quota) | almost none: secrets, then push | **recommended** |
+| **Render free web service → Kaggle API** — this repo | $0 (sleeps when idle) | in the researcher's own Kaggle account (their quota) | low: connect the repo, set two env vars | **recommended** |
+| HF Space (Docker) → Kaggle API | HF **PRO** (~$9/mo) + ~0 runtime | same | low | good if you already have PRO; Free accounts get HTTP 402 |
+| HF **Static** Space (viewer only) + CLI | $0 | same | researchers run `run_pipeline.py` | free fallback, no Run button |
 | HF Space with a GPU upgrade (`sdk: docker` + `t4-small`…) | ~$0.6–3.5/h while running | built in | you pay while idle; must move 7 notebooks onto the Space | overkill for a batch pipeline |
 | Kaggle notebook only (no web UI) | 0 | 30 h GPU/week free | researchers must edit YAML by hand | good fallback, not a product |
 | A VM (GCP/AWS/EC2/SageMaker) with the full stack | ~$50+/month | optional | you own the OS, the GPU drivers, the nnU-Net install | wrong scale for this project |
@@ -22,29 +24,35 @@ Hugging Face Hub as storage.**
 Why this split is the professional choice for a research pipeline:
 
 * **the web tier must be cheap and boring** — it only validates a form, fills in
-  parameters, pushes notebooks and polls two public APIs. A CPU Space
-  covers it (Hugging Face currently gates Docker/Gradio Spaces behind a PRO
-  plan; only Static Spaces are free, and this app needs a server).
+  parameters, pushes notebooks and polls two public APIs. A free Render web
+  service covers it (Hugging Face now gates Docker/Gradio Spaces behind PRO;
+  only Static Spaces are free, and this app needs a server).
 * **the heavy work is bursty and long** — registration, hours of nnU-Net
   training and GPU inference. Kaggle gives researchers GPU hours in *their own*
   account, so the project never bills anyone for an idle GPU.
 * **Hugging Face is already the transport** — every stage reads its inputs from
   and writes its outputs to the Hub, so no shared filesystem is needed between
-  the form, the notebooks and the viewer.
+  the form, the notebooks and the viewer. Run state is mirrored there too, so a
+  free host that sleeps does not lose a multi-hour run.
 
 ```
- browser ──► HF Space (FastAPI, CPU)                 researcher's machine / CI
-               │  form → run spec                     └─ run_pipeline.py --spec …
-               │  background thread
+ browser ──► Web app (FastAPI on Render free)          researcher's machine / CI
+               │  form → run spec                       └─ run_pipeline.py --spec …
+               │  background worker
                ▼
              Kaggle API ──► kernel per notebook (GPU when needed)
                │                  │ reads HF_TOKEN from Kaggle Secrets
                │                  ▼
                │        Hugging Face Hub
-               │        volumes/<id>/ slices/<id>/ viewers/<id>/
+               │        volumes/<id>/ slices/<id>/ viewers/<id>/ runs/<id>/
                ▼
              GET /api/runs/<id> ──► status card ──► /viewer/?specimen=<id>
 ```
+
+> Render's free plan spins down after ~15 min without traffic and its disk is
+> ephemeral, so the app mirrors `state.json` to `runs/<id>/` on the Hub and
+> auto-resumes (adopting any in-flight Kaggle kernel instead of re-running it).
+> Keep the status tab open during a run to keep the worker awake.
 
 ---
 
@@ -66,17 +74,18 @@ repositories** — or be added as a collaborator to the shared ones. The trainin
 notebook creates a missing model repo automatically, the others are created by
 `pipeline/hfio.py` when the first artifact is pushed.
 
-### b. Hugging Face token (Space secret)
+### b. Hugging Face token (app secret)
 
 1. <https://huggingface.co/settings/tokens> → **Fine-grained** token with
    *write* access to the repositories you will use.
-2. Space → **Settings → Variables and secrets → New secret**
-   * name `HF_TOKEN`, value `hf_...`
+2. Add it to the host:
+   * **Render** → Environment → `HF_TOKEN`
+   * **HF Space** → Settings → Variables and secrets → New secret `HF_TOKEN`
 
-Used by the Space (`pipeline/hfio.py`) to validate runs and serve the specimen
-picker.
+Used by the web app (`pipeline/hfio.py`) to validate runs, mirror run state and
+serve the specimen picker.
 
-### c. Kaggle API credentials (one Space secret)
+### c. Kaggle API credentials (one app secret)
 
 Kaggle issues an **access token** for new accounts:
 
@@ -93,7 +102,7 @@ it — the runner introspects the account from the token when it builds the
 `KAGGLE_API_TOKEN`, then `~/.kaggle/access_token`, then the legacy
 `~/.kaggle/kaggle.json`.
 
-The Space uses these to push, poll and download kernels. Nothing is written to
+The web app uses these to push, poll and download kernels. Nothing is written to
 the researcher's disk.
 
 > The Kaggle account that runs the kernels may be **different** from the Hugging
@@ -110,14 +119,35 @@ push fails with `HF_TOKEN unavailable`.
 
 Also make sure **GPU** is enabled on that Kaggle account for the GPU stages.
 
-### e. Build the Space
+### e. Deploy the web app (free)
 
-**Prerequisite:** the account that owns the Space needs a **PRO** plan — Free
-accounts can only create *Static* Spaces, and this app is a server
-(`create_repo` returns HTTP 402 `Payment Required` without PRO). Subscribe at
-<https://huggingface.co/pro>.
+**Option 1 — Render (recommended, no PRO / no card):**
 
-Then, from the project root:
+The repo ships a [`render.yaml`](render.yaml) Blueprint.
+
+1. Push the project to a GitHub repository (create an empty repo at
+   <https://github.com/new>, then):
+
+   ```bash
+   git remote add origin git@github.com:<you>/pfa-embryo3d.git
+   git push -u origin main
+   ```
+
+2. <https://dashboard.render.com> → **New → Blueprint** → pick the repo.
+3. Render creates the `pfa-embryo3d` Docker web service on the **free** plan.
+4. In the service → **Environment**, set the secrets (marked `sync: false`):
+   * `HF_TOKEN`
+   * `KAGGLE_API_TOKEN` (or `KAGGLE_USERNAME` + `KAGGLE_KEY`)
+5. Wait for the first build (~3–5 min) and open the service URL.
+
+Notes: Render injects `$PORT` (the Dockerfile honours it), free services sleep
+after ~15 min idle (first visit ~30–50 s), and the disk is ephemeral — run state
+is mirrored to `runs/<id>/` on the Hub and auto-resumed, so this is safe.
+
+**Option 2 — Hugging Face Space (only if the account has PRO):**
+
+Free HF accounts can only create *Static* Spaces; `create_repo` returns HTTP 402
+`Payment Required` for a Docker Space without PRO (<https://huggingface.co/pro>).
 
 ```bash
 export HF_TOKEN=hf_...
@@ -127,25 +157,18 @@ tools/deploy_space.sh senku111/pfa-embryo3d      # create + push
 or manually:
 
 ```bash
-git init -b main
-git add Dockerfile README.md space pipeline tools specs tests *.ipynb run_pipeline.py index5.html
-git commit -m "PFA pipeline as a Hugging Face Space"
-
 huggingface-cli repo create pfa-embryo3d --type space --space-sdk docker
 git remote add space https://huggingface.co/spaces/<you>/pfa-embryo3d
 git push space main
 ```
 
-The `README.md` front matter already declares `sdk: docker`, and the `Dockerfile`
-already copies the project in. The build starts immediately and runs on the free
-`cpu-basic` hardware once PRO is active (`sdk` is the only required front-matter
-field).
-
-Secrets are **Settings → Variables and secrets** — the build never sees them.
+The `README.md` front matter already declares `sdk: docker` and the `Dockerfile`
+copies the project in. Secrets are **Settings → Variables and secrets** — the
+build never sees them.
 
 ### f. Smoke test
 
-1. Open the Space → `GET /api/health` must report `"ok": true` (with
+1. Open the web app → `GET /api/health` must report `"ok": true` (with
    `creds.kaggle_account` naming the resolved Kaggle account).
 2. Press **Plan** with the default (case 1) form → you should see
    `registration` + `reconstruct`.
@@ -162,14 +185,16 @@ Secrets are **Settings → Variables and secrets** — the build never sees them
 
 | Who | What |
 | --- | --- |
-| Researcher (no terminal) | open the Space, pick a case, **Plan**, **Run**, follow the status card, open the viewer link |
+| Researcher (no terminal) | open the web app, pick a case, **Plan**, **Run**, follow the status card, open the viewer link |
 | Researcher (terminal/CI) | `python3 run_pipeline.py --spec specs/my-run.yaml [--engine kaggle] [--resume]` |
-| Maintainer | read `GET /api/runs` on the Space, or `runs/<run_id>/` on disk |
+| Maintainer | read `GET /api/runs` on the web app, or `runs/<run_id>/` on disk |
 | Anyone | browse `https://huggingface.co/datasets/<repo>/tree/main/viewers/<id>` |
 
-Resuming: every run stores `state.json`; `--resume` (or **Run with resume**) skips
-the stages already marked `done`, which is how an interrupted multi-hour
-training run continues after the Kaggle quota is topped up.
+Resuming: every run stores `state.json` locally **and** mirrors it to
+`runs/<run_id>/state.json` on the Hub. `--resume` (or **Run with resume**) skips
+the stages already marked `done` and adopts an in-flight Kaggle kernel rather
+than pushing a duplicate. On a free host that sleeps, the next visit to
+`/api/runs/<id>` resumes the run automatically.
 
 Artifacts are verified after every stage (`volumes/<id>`, the groups manifest,
 `viewers/<id>/manifest.json`), so a kernel that "succeeds" without pushing
@@ -183,21 +208,21 @@ anything fails the run with the log path.
   long training runs consume it and are the most common reason to use
   `--resume`. GPU is only requested for `train_group*` and `reconstruct`.
 * **Kernel timeout** — `run.timeout_s` (default 6 h per stage, 24 h for
-  training specs). Configurable per Space via the form.
+  training specs). Configurable via the form.
 * **Hugging Face rate limits** — set `HF_TOKEN`; anonymous Hub calls are
   slower and eventually throttled.
-* **Runs storage** — `PFA_RUNS_DIR` (defaults to `/data/pfa-runs` when the
-  Space has a persistent mount, `./runs` otherwise). Logs are also under
-  `runs/<run_id>/` when the runner is used directly.
+* **Runs storage** — `PFA_RUNS_DIR` (defaults to `/data/pfa-runs` when that
+  mount exists, `./runs` otherwise). The authoritative copy of each run's state
+  is mirrored to `runs/<run_id>/` on the Hub.
 * **Large shared datasets** — the viewer fetches from the Hub by URL; nothing
-  is proxied through the Space, so the Space stays on the free CPU tier.
+  is proxied through the web app, so the web tier stays free.
 
 ---
 
 ## 5. Operational checklist
 
 ```
-[ ] Space secrets: HF_TOKEN + KAGGLE_API_TOKEN  (or KAGGLE_USERNAME + KAGGLE_KEY)
+[ ] Web-app env vars: HF_TOKEN + KAGGLE_API_TOKEN  (or KAGGLE_USERNAME + KAGGLE_KEY)
 [ ] Kaggle secret HF_TOKEN in the executing account + GPU enabled
 [ ] Repos exist (or the researcher's repos are filled in on the form)
 [ ] GET /api/health → ok

@@ -37,4 +37,6 @@ COPY *.ipynb         /app/
 RUN chmod -R 777 /data
 
 EXPOSE 7860
-CMD ["uvicorn", "space.app:app", "--host", "0.0.0.0", "--port", "7860"]
+# Hugging Face Spaces expects 7860; other hosts (Render, Koyeb, Cloud Run, …)
+# inject $PORT — honour it with 7860 as the fallback.
+CMD ["sh", "-c", "uvicorn space.app:app --host 0.0.0.0 --port ${PORT:-7860}"]

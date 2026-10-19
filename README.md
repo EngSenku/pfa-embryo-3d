@@ -147,9 +147,19 @@ python3 tests/test_pipeline.py      # specs validate, plans are right, defaults 
 
 ## Deployment
 
-See [DEPLOY.md](DEPLOY.md) for the recommended deployment (Hugging Face Space +
-Kaggle API), the secrets involved and the one-off setup steps. In short, once the
-account has a PRO plan:
+See [DEPLOY.md](DEPLOY.md) for the full setup. In short:
+
+* **Web app** — the repo ships a free [`render.yaml`](render.yaml) Blueprint
+  (Render → New → Blueprint → pick the GitHub repo → set `HF_TOKEN` and
+  `KAGGLE_API_TOKEN`). No credit card; the free tier sleeps when idle.
+* **Storage** — Hugging Face Hub (already wired through `HF_TOKEN`).
+* **Compute** — the researcher's own Kaggle account (GPU quota), via the API.
+
+Run state is mirrored to `runs/<run_id>/` on the Hub, so a free host that sleeps
+resumes unfinished runs instead of losing them.
+
+If the HF account has a PRO plan, the same image also deploys as a Hugging Face
+Docker Space:
 
 ```bash
 export HF_TOKEN=hf_...

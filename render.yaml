@@ -1,0 +1,30 @@
+# Render Blueprint (free web service, no PRO plan needed).
+#
+#   https://render.com -> New -> Blueprint -> pick this repository
+#
+# Set the two secrets in the Render dashboard after the first deploy:
+#   HF_TOKEN          fine-grained token with write access to the HF repos
+#   KAGGLE_API_TOKEN  Kaggle access token (KGAT_...) or the legacy
+#                     KAGGLE_USERNAME + KAGGLE_KEY pair
+#
+# The free plan spins down after ~15 minutes without traffic and its disk is
+# ephemeral. Run state is mirrored to HF (runs/<id>/state.json) and the app
+# resumes unfinished runs on the next visit, so a sleep does not lose work.
+services:
+  - type: web
+    name: pfa-embryo3d
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: PFA_RUNS_DIR
+        value: /data/pfa-runs
+      - key: PFA_SHARED_REPO
+        value: senku111/embryo-3d
+      - key: HF_TOKEN
+        sync: false
+      - key: KAGGLE_API_TOKEN
+        sync: false

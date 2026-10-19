@@ -238,14 +238,24 @@ class RunHandle:
                 fh.write(line + "\n")
 
 
-def _read_state(run_id: str) -> dict | None:
+def _shared_repo() -> str:
+    return os.environ.get("PFA_SHARED_REPO", "senku111/embryo-3d")
+
+
+def _read_state(run_id: str, hub_fallback: bool = True) -> dict | None:
     p = RUNS_DIR / run_id / "state.json"
-    if not p.exists():
-        return None
-    try:
-        return json.loads(p.read_text())
-    except Exception:
-        return {"run_id": run_id, "status": "unknown"}
+    if p.exists():
+        try:
+            return json.loads(p.read_text())
+        except Exception:
+            return {"run_id": run_id, "status": "unknown"}
+    # After a free-host restart the disk is gone; state lives on the Hub.
+    if hub_fallback:
+        try:
+            return hfio.read_json(_shared_repo(), f"runs/{run_id}/state.json", "dataset")
+        except Exception:
+            return None
+    return None
 
 
 def _log_tail(run_id: str, n: int = LOG_TAIL_LINES) -> str:
@@ -272,7 +282,7 @@ def start_run(spec_dict: dict, dry_run: bool = False) -> str:
             runner.run()
         except Exception as exc:  # noqa: BLE001 - the state file records the failure
             handle.log(f"FAILED: {type(exc).__name__}: {exc}")
-            state = _read_state(run_id) or {"run_id": run_id, "stages": {}}
+            state = _read_state(run_id, hub_fallback=False) or {"run_id": run_id, "stages": {}}
             state.setdefault("status", "failed")
             state["error"] = f"{type(exc).__name__}: {exc}"
             (RUNS_DIR / run_id / "state.json").write_text(
@@ -285,6 +295,57 @@ def start_run(spec_dict: dict, dry_run: bool = False) -> str:
         _threads[run_id] = thread
     thread.start()
     return run_id
+
+
+def resume_run(run_id: str) -> bool:
+    """(Re)start the worker for an unfinished run.
+
+    Free hosts sleep and drop their disk, which kills the worker thread.  This
+    rebuilds the spec from the mirrored state and resumes: finished stages are
+    skipped and an in-flight Kaggle kernel is adopted rather than duplicated.
+    """
+    with _lock:
+        t = _threads.get(run_id)
+        if t and t.is_alive():
+            return False
+    state = _read_state(run_id)
+    if not state or state.get("status") in ("done", "failed"):
+        return False
+    raw = state.get("spec")
+    if not raw:
+        return False
+
+    log_path = RUNS_DIR / run_id / "run.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    def _work() -> None:
+        handle = RunHandle(run_id, log_path)
+        handle.log(f"resuming run {run_id} ({state.get('status')})")
+        try:
+            spec = build_spec(raw, run_id=run_id)
+            Runner(spec=spec, runs_dir=RUNS_DIR, log=handle.log, resume=True).run()
+        except Exception as exc:  # noqa: BLE001
+            handle.log(f"FAILED: {type(exc).__name__}: {exc}")
+
+    thread = threading.Thread(target=_work, name=f"pfa-{run_id}", daemon=True)
+    with _lock:
+        _threads[run_id] = thread
+    thread.start()
+    return True
+
+
+def _reap() -> None:
+    """Background loop: pick up unfinished runs (local or on the Hub)."""
+    while True:
+        try:
+            ids = {d.name for d in RUNS_DIR.iterdir() if d.is_dir() and not d.name.startswith("_")}
+            ids |= set(hfio.list_runs(_shared_repo()))
+            for run_id in ids:
+                if _valid_run_id(run_id):
+                    resume_run(run_id)
+        except Exception:  # noqa: BLE001 - the reaper must never die
+            pass
+        time.sleep(300)
 
 
 # ---------------------------------------------------------------------------
@@ -366,12 +427,13 @@ def create_run(form: FormSpec) -> dict:
 
 @app.get("/api/runs")
 def list_runs() -> dict:
+    ids = {d.name for d in RUNS_DIR.iterdir()
+           if d.is_dir() and not d.name.startswith("_")}
+    ids |= set(hfio.list_runs(_shared_repo()))
     runs = []
-    for d in sorted(RUNS_DIR.iterdir(), reverse=True):
-        if not d.is_dir() or d.name.startswith("_"):
-            continue
-        state = _read_state(d.name) or {}
-        runs.append({"run_id": d.name, "status": state.get("status", "unknown"),
+    for run_id in sorted(ids, reverse=True):
+        state = _read_state(run_id) or {}
+        runs.append({"run_id": run_id, "status": state.get("status", "unknown"),
                      "title": state.get("title", ""), "engine": state.get("engine", ""),
                      "specimen_id": state.get("specimen_id", ""),
                      "stages": state.get("stages", {})})
@@ -385,6 +447,9 @@ def run_state(run_id: str) -> dict:
     state = _read_state(run_id)
     if state is None:
         raise HTTPException(404, f"unknown run {run_id}")
+    # Free hosts sleep and kill the worker: a poll is what brings the run back.
+    if state.get("status") not in ("done", "failed"):
+        resume_run(run_id)
     return {"state": state, "log": _log_tail(run_id),
             "viewer": _viewer_for(state)}
 
@@ -434,6 +499,12 @@ def api_index() -> dict:
 
 
 _mount()
+
+
+@app.on_event("startup")
+def _start_reaper() -> None:
+    """Resume runs interrupted by a free-host restart (see ``_reap``)."""
+    threading.Thread(target=_reap, name="pfa-reaper", daemon=True).start()
 
 
 # Make the module importable as `app` for uvicorn.

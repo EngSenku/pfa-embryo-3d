@@ -240,6 +240,7 @@ class Runner:
     log: Callable[[str], None] = lambda s: None
     dry_run: bool = False
     resume: bool = False
+    state_repo: str | None = None
     state: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -248,10 +249,18 @@ class Runner:
         self.run_dir.mkdir(parents=True, exist_ok=True)
         self.nb_dir.mkdir(parents=True, exist_ok=True)
         self.state_path = self.run_dir / "state.json"
-        # Resuming an existing run id means "skip whatever already finished".
-        if self.state_path.exists():
-            self.resume = True
+        # Mirror run state to the shared Hub repo so a restarted web tier (free
+        # hosts sleep and lose their disk) can pick a run back up.
+        if self.state_repo is None:
+            self.state_repo = (self.spec.shared_repo
+                               if self.spec.run_cfg.get("mirror_state", True) else None)
+        self._mirror_warned = False
+        had_local = self.state_path.exists()
         self.state = self._load_state()
+        # Resuming means "skip/adopt whatever already started" — from either a
+        # local state file or one recovered from the Hub.
+        if had_local or self.state.get("stages"):
+            self.resume = True
         # Local execution gets a per-run scratch root instead of /kaggle/working.
         # The value must land in the spec *before* plan() builds the parameters.
         if self.spec.engine == "local" and not self.spec.run_cfg.get("work_dir"):
@@ -261,12 +270,40 @@ class Runner:
 
     # -- state ------------------------------------------------------------
     def _load_state(self) -> dict:
-        if self.resume and self.state_path.exists():
-            return json.loads(self.state_path.read_text())
+        if self.state_path.exists():
+            try:
+                return json.loads(self.state_path.read_text())
+            except Exception:
+                pass
+        if self.state_repo:
+            try:
+                remote = hfio.read_json(self.state_repo,
+                                        f"runs/{self.spec.run_id}/state.json", "dataset")
+                if isinstance(remote, dict) and remote.get("stages"):
+                    self.log(f"  ↓ recovered run state from {self.state_repo}"
+                             f"/runs/{self.spec.run_id}")
+                    return remote
+            except Exception:
+                pass
         return {"run_id": self.spec.run_id, "status": "pending", "stages": {}}
 
     def _save_state(self) -> None:
         self.state_path.write_text(json.dumps(self.state, indent=2, default=str))
+        if self.dry_run or not self.state_repo or not hfio.token():
+            return
+        try:
+            hfio.upload_json(self.state_repo, f"runs/{self.spec.run_id}/state.json", self.state,
+                             "dataset",
+                             commit_message=f"run {self.spec.run_id}: {self.state.get('status')}")
+            log_file = self.run_dir / "run.log"
+            if log_file.exists():
+                hfio.upload_file(self.state_repo, f"runs/{self.spec.run_id}/run.log", log_file,
+                                 "dataset",
+                                 commit_message=f"run {self.spec.run_id}: log")
+        except Exception as e:  # never let state mirroring break a run
+            if not self._mirror_warned:
+                self.log(f"  ! could not mirror run state to {self.state_repo} ({e})")
+                self._mirror_warned = True
 
     def _stages(self) -> list[Stage]:
         return self.spec.plan()
@@ -381,6 +418,8 @@ class Runner:
         self.state["title"] = self.spec.title
         self.state["engine"] = self.spec.engine
         self.state["specimen_id"] = self.spec.specimen_id
+        # Keep the spec inside the state so a restarted web tier can rebuild it.
+        self.state["spec"] = self.spec.raw
         self._save_state()
 
         (self.run_dir / "spec.yaml").write_text(
@@ -423,6 +462,16 @@ class Runner:
         return self.state
 
     def _run_stage(self, stage: Stage) -> None:
+        existing = self.state["stages"].get(stage.name, {})
+        # After a restart the kernel may already be running: adopt it instead of
+        # pushing a duplicate (which would redo hours of GPU work).
+        if (self.resume and self.spec.engine == "kaggle"
+                and existing.get("status") == "running" and existing.get("kernel")):
+            kernel_id = existing["kernel"]
+            self.log(f"↻ {stage.name}: adopting in-flight kernel {kernel_id}")
+            self._wait_and_fetch(stage, kernel_id)
+            return
+
         self.log(f"▶ {stage.describe()}")
         src = Path(__file__).resolve().parents[1] / stage.notebook
         if not src.exists():
@@ -435,9 +484,8 @@ class Runner:
             return
 
         if self.spec.engine == "local":
-            eng = self._engine()
             out = self.nb_dir / f"{stage.name}.executed.ipynb"
-            eng.execute(prepared, out, stage.params)
+            self._engine().execute(prepared, out, stage.params)
             return
 
         eng = self._engine()
@@ -445,6 +493,10 @@ class Runner:
         kernel_id = eng.submit(prepared, slug, gpu=stage.gpu)
         self.state["stages"][stage.name]["kernel"] = kernel_id
         self._save_state()
+        self._wait_and_fetch(stage, kernel_id)
+
+    def _wait_and_fetch(self, stage: Stage, kernel_id: str) -> None:
+        eng = self._engine()
         try:
             eng.wait(kernel_id)
         finally:

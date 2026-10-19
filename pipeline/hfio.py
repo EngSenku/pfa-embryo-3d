@@ -77,6 +77,36 @@ def list_repo(repo_id: str, repo_type: str = "dataset") -> list[str]:
         return []
 
 
+def upload_file(repo_id: str, path: str, local_path: str | Path, repo_type: str = "dataset",
+                commit_message: str = "") -> None:
+    """Create the repo if needed and upload a local file."""
+    a = api()
+    a.create_repo(repo_id, repo_type=repo_type, exist_ok=True)
+    a.upload_file(path_or_fileobj=str(local_path), path_in_repo=path, repo_id=repo_id,
+                  repo_type=repo_type, commit_message=commit_message or f"upload {path}")
+
+
+def list_runs(repo_id: str, repo_type: str = "dataset") -> list[str]:
+    """Run ids that have a mirrored ``runs/<id>/state.json`` in the repo."""
+    try:
+        entries = api().list_repo_tree(repo_id, path_in_repo="runs",
+                                       repo_type=repo_type, recursive=False)
+        out = []
+        for e in entries:
+            parts = getattr(e, "path", "").split("/")
+            if len(parts) == 2 and parts[0] == "runs":
+                out.append(parts[1])
+        return sorted(set(out))
+    except Exception:
+        pass
+    out = []
+    for f in list_repo(repo_id, repo_type):
+        parts = f.split("/")
+        if len(parts) == 3 and parts[0] == "runs" and parts[2] == "state.json":
+            out.append(parts[1])
+    return sorted(set(out))
+
+
 def list_specimens(shared_repo: str = "senku111/embryo-3d") -> list[dict]:
     """Specimens that already have a viewer bundle, for the UI picker."""
     out = []
