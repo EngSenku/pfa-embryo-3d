@@ -427,6 +427,12 @@ function validate() {
     $("model_repo").classList.add("bad");
     errs.push("Your nnU-Net model repo is required.");
   }
+  const nlo = num("norm_lo"), nhi = num("norm_hi");
+  if ((nlo === null) !== (nhi === null)) {
+    $("norm_lo").classList.add("bad");
+    $("norm_hi").classList.add("bad");
+    errs.push("Set both normalisation values, or leave both blank.");
+  }
 
   lastErrs = errs;
   updateWarns();
