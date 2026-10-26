@@ -357,7 +357,8 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
    ========================================================================================== */
 const Q = new URLSearchParams(location.search);
 const SPECIMEN_ID = (Q.get("specimen") || "CS17-6521").trim();
-const HF_REPO = (Q.get("repo") || "senku111/embryo-3d").trim();
+const DEFAULT_REPO = "senku111/embryo-3d";
+const HF_REPO = (Q.get("repo") || DEFAULT_REPO).trim();
 const HF_BASE = `https://huggingface.co/datasets/${HF_REPO}/resolve/main`;
 const BUNDLE_BASE = `${HF_BASE}/viewers/${SPECIMEN_ID}/`;
 const BUNDLE_MANIFEST_URL = `${BUNDLE_BASE}manifest.json`;
@@ -367,7 +368,9 @@ const SLICE_EXT = "webp";
 const sliceUrl = (z) => `${SLICES_BASE_URL}/slice_${String(z).padStart(4, "0")}.${SLICE_EXT}`;
 // Where the specimen picker gets its list.  The Space serves /api/specimens;
 // a plain static deployment falls back to the optional `?catalog=` URL.
-const CATALOG_URL = Q.get("catalog") || "/api/specimens";
+const CATALOG_URL = Q.get("catalog") || (HF_REPO === DEFAULT_REPO
+  ? "/api/specimens"
+  : `/api/specimens?repo=${encodeURIComponent(HF_REPO)}`);
 // Stage / source labels shown in the specimen card (overridable for unusual IDs).
 const STAGE = Q.get("stage") || (/^CS\d+[A-Za-z]*-/i.test(SPECIMEN_ID) ? SPECIMEN_ID.split("-")[0] : "—");
 const SOURCE = Q.get("source") || "3D Atlas";

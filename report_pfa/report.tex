@@ -133,7 +133,7 @@ L'embryon humain constitue le cas d'étude principal de ce travail. Cette applic
 
 La chaîne développée est appliquée à différents stades du développement embryonnaire, avec une adaptation des modèles de segmentation aux caractéristiques anatomiques propres à chaque stade. Les reconstructions obtenues ne constituent pas uniquement des modèles de visualisation : elles offrent une représentation tridimensionnelle permettant d'étudier les volumes, les dimensions, les positions et les relations spatiales entre les structures anatomiques. Elles fournissent ainsi une base pour l'analyse quantitative de l'organisation et de l'évolution de l'anatomie embryonnaire au cours du développement.
 
-La chaîne est exposée sous la forme d'une application web gratuite qui distingue trois cas de déploiement : reproduire le spécimen CS17-6521 avec les modèles du projet, soumettre un autre spécimen ou des coupes quelconques avec un modèle fourni par le chercheur, ou téléverser une archive de coupes brutes avec son échelle physique. Le calcul reste délégué à Kaggle et les artefacts sont publiés sur Hugging Face.
+La chaîne est exposée sous la forme d'une application web gratuite qui distingue trois cas de déploiement : reproduire un spécimen CS17 (CS17-6521 ou un autre spécimen du même stade) avec les modèles du projet, soumettre un autre embryon depuis l'Atlas ou une archive avec un modèle fourni par le chercheur, ou téléverser des coupes quelconques, embryonnaires ou non, avec ce modèle et leur échelle physique. Le calcul reste délégué à Kaggle et les artefacts sont publiés sur Hugging Face.
 
 \textbf{Mots-clés :} histologie sériée, reconstruction tridimensionnelle, recalage d'images, segmentation, vision par ordinateur, intelligence artificielle, anatomie 3D, embryon humain, développement embryonnaire, morphométrie 3D.
 
@@ -148,7 +148,7 @@ The human embryo is used as the main case study. This application is particularl
 
 The developed pipeline is applied to different stages of embryonic development, with segmentation models adapted to the anatomical characteristics of each stage. The resulting reconstructions are not limited to visualization: they provide three-dimensional representations that can be used to study the volume, dimensions, position, and spatial relationships of anatomical structures. The proposed approach therefore provides a basis for the quantitative analysis of embryonic anatomy and its evolution throughout development.
 
-The pipeline is exposed through a free web application with three deployment cases: reproduce specimen CS17-6521 with the project models, submit another specimen or arbitrary sections with a researcher-supplied model, or upload a raw-section archive together with its physical scale. Computation stays on Kaggle and the artefacts are published on Hugging Face.
+The pipeline is exposed through a free web application with three deployment cases: reproduce a CS17 specimen (CS17-6521 or another specimen at the same stage) with the project models, submit another embryo from the Atlas or an archive with a researcher-supplied model, or upload arbitrary sections, embryonic or not, with that model and their physical scale. Computation stays on Kaggle and the artefacts are published on Hugging Face.
 
 \textbf{Keywords:} serial histology, three-dimensional reconstruction, image registration, segmentation, computer vision, artificial intelligence, 3D anatomy, human embryo, embryonic development, 3D morphometry.
 
@@ -197,7 +197,7 @@ L'objectif est de développer une chaîne complète allant de l'image histologiq
     \item une \textbf{segmentation par groupes équilibrés} : les 87 structures du stade Carnegie 17 (CS17) sont réparties en quatre groupes de tailles comparables, chacun doté de son propre modèle nnU-Net, pour que les grandes structures ne dominent pas l'apprentissage ;
     \item un \textbf{format de maillages 3D compact}, à niveaux de détail multiples, adapté à l'affichage dans un navigateur ;
     \item une \textbf{correspondance corrigée entre numéros et noms} des structures de CS17, la table fournie par l'Atlas s'étant révélée erronée ;
-    \item une \textbf{application web de déploiement} qui expose trois cas d'usage : reproduction du spécimen du projet, autre spécimen ou coupes quelconques avec un modèle du chercheur, archive de coupes brutes avec calibration physique ; le calcul est délégué à Kaggle et le stockage à Hugging Face.
+    \item une \textbf{application web de déploiement} qui expose trois cas d'usage : reproduction d'un spécimen CS17, autre embryon avec un modèle du chercheur, coupes quelconques avec ce modèle et calibration physique ; le calcul est délégué à Kaggle et le stockage à Hugging Face.
 \end{itemize}
 
 \section{Organisation du rapport}
@@ -317,7 +317,7 @@ Le code repose sur Python (NumPy, SciPy, scikit-image, OpenCV), PyTorch et nnU-N
 
 \section{Trois cas de déploiement}
 
-L'interface n'expose pas les six notebooks historiques : elle réduit le déploiement à trois cas, pour que le chercheur sache toujours quel modèle intervient et ce qu'il doit fournir (tableau~\ref{tab:deploycases}). Le premier cas reproduit le spécimen du projet avec ses quatre modèles CS17. Le deuxième accepte un autre spécimen, un autre stade ou des coupes quelconques, mais avec un modèle nnU-Net fourni par le chercheur. Le troisième est le raccourci de téléversement du deuxième : une archive de coupes brutes, accompagnée de la taille du pixel dans le plan et du pas entre coupes.
+L'interface n'expose pas les six notebooks historiques : elle réduit le déploiement à trois cas, pour que le chercheur sache toujours quel modèle intervient et ce qu'il doit fournir (tableau~\ref{tab:deploycases}). Le premier cas reproduit CS17-6521 ou un autre spécimen CS17 avec ses quatre modèles du projet. Le deuxième s'adresse à un autre embryon, depuis l'Atlas ou une archive de coupes, avec un modèle nnU-Net fourni par le chercheur. Le troisième est le chemin générique de téléversement : des coupes quelconques, embryonnaires ou non, avec la taille du pixel dans le plan, le pas entre coupes et le même modèle que le cas 2.
 
 \begin{table}[H]
 \centering
@@ -326,16 +326,16 @@ L'interface n'expose pas les six notebooks historiques : elle réduit le déploi
 \toprule
 \textbf{Cas} & \textbf{Entrée} & \textbf{Modèle} & \textbf{Fourni par le chercheur} \\
 \midrule
-1. Même spécimen & CS17-6521 : volume Atlas (\texttt{.tif + .am}) ou nouvelles coupes du même cas & les 4 modèles CS17 du projet & rien ; les dépôts du projet sont les valeurs par défaut \\
-2. Autre spécimen ou coupes quelconques & autre code Atlas, ou archive de coupes (y compris non embryonnaires) & nnU-Net v2 du chercheur & dépôt du modèle, manifeste des groupes, configuration et pli \\
-3. Téléversement & archive ZIP/TAR/RAR ou lien Hugging Face, plus XY (\textmu m/px) et Z (\textmu m/coupe) & nnU-Net v2 du chercheur & l'archive, l'échelle physique et les mêmes informations de modèle qu'au cas 2 \\
+1. Spécimen CS17 & CS17-6521 ou autre spécimen CS17 : volume Atlas (\texttt{.tif + .am}) ou nouvelles coupes & les 4 modèles CS17 du projet & rien ; les dépôts du projet sont les valeurs par défaut \\
+2. Autre embryon & autre code Atlas, ou archive de coupes embryonnaires & nnU-Net v2 du chercheur & dépôt du modèle, manifeste des groupes, configuration et pli \\
+3. Coupes quelconques & archive ZIP/TAR/RAR ou lien Hugging Face, plus XY (\textmu m/px) et Z (\textmu m/coupe) ; embryon ou autre tissu & nnU-Net v2 du chercheur & l'archive, l'échelle physique et les mêmes informations de modèle qu'au cas 2 \\
 \bottomrule
 \end{tabularx}
 \caption{Les trois cas de déploiement exposés par l'application web.}
 \label{tab:deploycases}
 \end{table}
 
-Le cas 2 accepte donc \emph{n'importe quelles} coupes, et pas seulement un volume de l'Atlas : le pipeline ne suppose pas que l'image soit un embryon, il segmente ce que le modèle fourni prédit. Les noms et les couleurs des structures sont lus dans un fichier \texttt{names.json} propre au paquet ; les nombres du projet (4 groupes, Dice CS17) ne sont affichés que pour CS17-6521 ou lorsqu'un fichier \texttt{project.json} les remplace.
+Le cas 2 est destiné à un autre embryon, mais accepte aussi bien un volume de l'Atlas qu'une archive de coupes. Le cas 3 est le chemin générique pour tout tissu ou objet : il utilise le même chemin de téléversement que le cas 2. Le pipeline ne peut pas vérifier qu'une image est embryonnaire ; la distinction entre les cas 2 et 3 relève donc de l'intention du chercheur. Les noms et les couleurs des structures sont lus dans un fichier \texttt{names.json} propre au paquet ; les nombres du projet (4 groupes, Dice CS17) ne sont affichés que pour CS17-6521 ou lorsqu'un fichier \texttt{project.json} les remplace.
 
 Le cas 3 est le chemin de téléversement du cas 2. Le serveur reçoit l'archive, la pousse sur Hugging Face par \texttt{POST /api/uploads}, puis transmet l'URL au notebook ; l'archive est supprimée du disque du serveur. Les liens Hugging Face privés sont lus avec le jeton du serveur. Une archive locale n'est acceptée qu'avec le moteur local : un noyau Kaggle ne voit pas le disque du serveur.
 
@@ -590,7 +590,9 @@ L'interface n'est plus une perspective : elle est déployée à l'adresse \url{h
 
 \safeimg{screenshots/form.png}{0.92\textwidth}{Formulaire de lancement de l'application déployée. Les trois cas sont sélectionnables en haut ; selon le cas, le modèle, l'entrée et la calibration sont validés avant l'envoi sur Kaggle.}{fig:interfaceform}{Formulaire de l'application déployée}
 
-Le formulaire produit le même fichier YAML que la ligne de commande. Ce spec contient le spécimen, le format d'entrée, les dépôts Hugging Face, le modèle, la configuration et le pli, la reconstruction et le moteur d'exécution ; il est enregistré à côté des notebooks exécutés, ce qui rend chaque lancement reproductible. Le bouton \textbf{Preview} affiche les étapes et le YAML sans rien exécuter ; \textbf{Run} pousse les noyaux et affiche l'état, le journal et le lien du visualiseur.
+Le formulaire produit le même fichier YAML que la ligne de commande. Ce spec contient le spécimen, le format d'entrée, les dépôts Hugging Face, le modèle, la configuration et le pli, la reconstruction et le moteur d'exécution ; il est enregistré à côté des notebooks exécutés, ce qui rend chaque lancement reproductible. Le bouton \textbf{Preview} affiche les étapes et le YAML sans rien exécuter ; \textbf{Run} pousse les noyaux et affiche l'état, le journal et le lien du visualiseur. À la fin, le volume recalé, les coupes WebP et le paquet de maillages sont publiés dans \texttt{volumes/<id>/}, \texttt{slices/<id>/} et \texttt{viewers/<id>/} du dépôt Hugging Face choisi, tandis que l'état du lancement est recopié dans \texttt{runs/<id>/state.json}. Le bouton \textbf{Open the 3D model} ouvre \texttt{/viewer/?specimen=<id>\&repo=<dépôt>} ; le sélecteur du visualiseur liste tous les paquets \texttt{viewers/*/manifest.json} du dépôt, et non un seul cas. Le visualiseur lit ces artefacts directement depuis Hugging Face, ce qui suppose un dépôt public pour un lien partageable.
+
+\safeimg{screenshots/viewer.png}{0.96\textwidth}{Visualiseur 3D du paquet publié pour CS17-6521. Le sélecteur de spécimen est alimenté par les paquets \texttt{viewers/<id>/} présents sur Hugging Face ; il n'est donc pas limité à ce cas.}{fig:interfaceviewer}{Visualiseur 3D d'un paquet publié}
 
 \subsection{Audit de généralisation des notebooks}
 
@@ -616,7 +618,7 @@ Modèle du chercheur & aucun chemin dans le formulaire pour fournir un modèle &
 \label{tab:generality}
 \end{table}
 
-Après correction, le cas 2 accepte un autre spécimen, un autre stade ou des coupes quelconques, y compris non embryonnaires, à condition que le modèle du chercheur ait été entraîné pour ces images. Le cas 3 ajoute seulement le téléversement et l'échelle physique. Le cas 1 conserve les modèles du projet et retrouve le manifeste des quatre groupes même si le dépôt du jeu d'entraînement est privé ou absent : les \texttt{dataset.json} publiés avec les points de contrôle contiennent déjà la correspondance entre noms de classes et identifiants de l'Atlas, et la plage de normalisation CS17 est appliquée. Ce repli ne remplace pas un manifeste pour un modèle inconnu ; il évite seulement de bloquer la reproduction du projet.
+Après correction, le cas 2 accepte un autre embryon, depuis l'Atlas ou une archive, à condition que le modèle du chercheur ait été entraîné pour ces images. Le cas 3 accepte des coupes quelconques, embryonnaires ou non, avec le même chemin de téléversement et la même calibration physique. Le cas 1 conserve les modèles du projet et retrouve le manifeste des quatre groupes même si le dépôt du jeu d'entraînement est privé ou absent : les \texttt{dataset.json} publiés avec les points de contrôle contiennent déjà la correspondance entre noms de classes et identifiants de l'Atlas, et la plage de normalisation CS17 est appliquée. Ce repli ne remplace pas un manifeste pour un modèle inconnu ; il évite seulement de bloquer la reproduction du projet.
 
 La généralisation a toutefois des limites qu'il faut expliciter. Un modèle entraîné sur CS17 ne segmente pas correctement un autre stade ou un autre tissu : le formulaire ne réentraîne rien, il exige un modèle adapté. La qualité du recalage dépend de la coloration, des plis et des déchirures, et n'a été validée que sur cinq coupes de CS15. Enfin, aucun résultat quantitatif n'est fourni pour les cas 2 et 3 : l'interface les rend exécutables, elle ne prouve pas leur exactitude anatomique. Ces points restent des perspectives de validation, pas des fonctionnalités cachées.
 
@@ -758,7 +760,7 @@ Ces difficultés donnent quatre enseignements : valider l'évaluation avant les 
 
 Ce projet a permis de réaliser une chaîne complète qui transforme des coupes histologiques sériées en un modèle 3D de l'embryon humain consultable dans un navigateur. Elle associe un recalage validé sur un cas à référence connue, une segmentation de 87 structures par quatre modèles nnU-Net spécialisés sur des groupes équilibrés (Dice moyen de 0,826 sur coupes réservées), et une reconstruction de maillages adaptée au web. Quatre choix se sont révélés déterminants : la partition équilibrée des structures, la séparation physique des coupes de test, la normalisation d'intensité partagée entre entraînement et inférence, et le contrôle des métadonnées de l'Atlas, qui a conduit à une correspondance corrigée entre numéros et noms pour CS17.
 
-La chaîne est également déployée sous la forme d'une application web gratuite. L'interface réduit le déploiement à trois cas : reproduction de CS17-6521 avec les modèles du projet, autre spécimen ou coupes quelconques avec un modèle du chercheur, et téléversement de coupes brutes avec calibration physique. L'audit des notebooks a montré que la registration et la reconstruction étaient déjà largement paramétrables, mais que la configuration, le pli, le manifeste des groupes et le nom des fichiers Atlas étaient encore figés sur CS17 ; ces constantes ont été corrigées et testées, et le modèle du projet reste la valeur par défaut du premier cas.
+La chaîne est également déployée sous la forme d'une application web gratuite. L'interface réduit le déploiement à trois cas : reproduction d'un spécimen CS17 avec les modèles du projet, autre embryon avec un modèle du chercheur, et coupes quelconques avec ce modèle et leur calibration physique. L'audit des notebooks a montré que la registration et la reconstruction étaient déjà largement paramétrables, mais que la configuration, le pli, le manifeste des groupes et le nom des fichiers Atlas étaient encore figés sur CS17 ; ces constantes ont été corrigées et testées, et le modèle du projet reste la valeur par défaut du premier cas.
 
 \section*{Limites}
 

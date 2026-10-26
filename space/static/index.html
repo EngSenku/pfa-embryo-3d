@@ -162,6 +162,7 @@ details.advanced .in{padding-top:16px}
 .runerr:empty{display:none}
 .files{font:400 11px/1.5 var(--mono);color:var(--dim);margin-top:10px;word-break:break-all}
 .files:empty{display:none}
+.files a{color:var(--lime);text-decoration:underline;text-underline-offset:2px}
 details.more{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
 details.more summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim)}
 details.more summary::-webkit-details-marker{display:none}
@@ -210,17 +211,17 @@ details.history[open] summary::after{content:"−"}
   </section>
 
   <nav class="cases" role="tablist" aria-label="Run type">
-    <button class="case on" data-case="same" role="tab" aria-selected="true"><span class="n">1</span><b>Same specimen</b></button>
-    <button class="case" data-case="other" role="tab" aria-selected="false"><span class="n">2</span><b>Other specimen</b></button>
-    <button class="case" data-case="upload" role="tab" aria-selected="false"><span class="n">3</span><b>Upload sections</b></button>
+    <button class="case on" data-case="same" role="tab" aria-selected="true"><span class="n">1</span><b>CS17 / project</b></button>
+    <button class="case" data-case="other" role="tab" aria-selected="false"><span class="n">2</span><b>Other embryo</b></button>
+    <button class="case" data-case="upload" role="tab" aria-selected="false"><span class="n">3</span><b>Any sections</b></button>
   </nav>
-  <p class="caseHint" id="caseHint">CS17-6521 with the project models. Add new sections of the same specimen if needed.</p>
+  <p class="caseHint" id="caseHint">CS17-6521 or another CS17 specimen; Atlas or new sections, with the project models.</p>
 
   <form class="card" id="runForm" novalidate>
     <div class="field">
       <label for="specimen_id">Specimen ID <b>*</b></label>
       <input id="specimen_id" value="CS17-6521" autocomplete="off" spellcheck="false" />
-      <div class="hint" id="idHint">Used for the folder name. Atlas IDs look like <code>CS17-6521</code>.</div>
+      <div class="hint" id="idHint">CS17 ID for the folder name, e.g. <code>CS17-6521</code>. Another CS17 specimen is accepted.</div>
     </div>
 
     <div id="inputWrap">
@@ -277,6 +278,7 @@ details.history[open] summary::after{content:"−"}
           <label for="hf_repo">Save results to</label>
           <input id="hf_repo" value="senku111/embryo-3d" spellcheck="false" />
           <label class="check"><input type="checkbox" id="hf_private" /><span>Private dataset</span></label>
+          <div class="hint">Private results cannot be opened by the public viewer.</div>
         </div>
         <div id="manifestWrap" class="field hidden">
           <label for="groups_manifest_in_repo">Groups manifest path (optional)</label>
@@ -341,13 +343,18 @@ function toast(t) { const n = $("toast"); n.textContent = t; n.classList.add("sh
 /* ---------------- cases ---------------- */
 const CASE_DEFAULTS = {
   same: { id: "CS17-6521", fmt: "atlas", custom: false,
-    hint: "CS17-6521 with the project models. Add new sections of the same specimen if needed." },
+    hint: "CS17-6521 or another CS17 specimen; Atlas or new sections, with the project models." },
   other: { id: "", fmt: "atlas", custom: true,
-    hint: "Another specimen or any sections, segmented with your own nnU-Net model." },
+    hint: "Another embryo: Atlas volume or sections, segmented with your model." },
   upload: { id: "", fmt: "raw", custom: true,
-    hint: "Upload sections with their physical scale; your model does the segmentation." }
+    hint: "Any tissue or object: upload or link sections, with your model." }
 };
-const RAW_LABEL = { same: "New sections", other: "Any sections", upload: "Sections" };
+const ID_HINT = {
+  same: "CS17 ID for the folder name, e.g. <code>CS17-6521</code>. Another CS17 specimen is accepted.",
+  other: "Any unique ID. Atlas IDs look like <code>CS12-8505A</code>.",
+  upload: "Any unique ID; no Atlas code is needed."
+};
+const RAW_LABEL = { same: "New sections", other: "Sections", upload: "Sections" };
 
 document.querySelectorAll(".case").forEach(b => b.addEventListener("click", () => {
   activeCase = b.dataset.case;
@@ -365,9 +372,7 @@ document.querySelectorAll(".case").forEach(b => b.addEventListener("click", () =
   $("fileName").textContent = "or drop it here";
   $("modelBox").classList.toggle("hidden", !def.custom);
   $("manifestWrap").classList.toggle("hidden", !def.custom);
-  $("idHint").innerHTML = def.custom
-    ? "Used for the folder name. Any unique ID works; Atlas IDs look like <code>CS12-8505A</code>."
-    : "Used for the folder name. Atlas IDs look like <code>CS17-6521</code>.";
+  $("idHint").innerHTML = ID_HINT[activeCase];
   syncInput();
 }));
 
@@ -407,6 +412,10 @@ function validate() {
   const id = $("specimen_id").value.trim();
   if (!id) { $("specimen_id").classList.add("bad"); errs.push("Specimen ID is required."); }
   else if (!/^[A-Za-z0-9._-]+$/.test(id)) { $("specimen_id").classList.add("bad"); errs.push("Specimen ID cannot contain spaces or slashes."); }
+  else if (activeCase === "same" && !/^CS17-/.test(id)) {
+    $("specimen_id").classList.add("bad");
+    errs.push("Case 1 uses the project CS17 models; use a CS17 ID, or choose Case 2.");
+  }
 
   if (inputFormat === "atlas" && id && !/^CS\d+-[A-Za-z0-9._-]+$/.test(id)) {
     $("specimen_id").classList.add("bad");
@@ -619,11 +628,17 @@ function renderRun(data) {
     if (near) lg.scrollTop = lg.scrollHeight;
   }
   const done = st.status === "done";
-  const v = data.viewer || (done && st.specimen_id ? { specimen: st.specimen_id, url: `/viewer/?specimen=${st.specimen_id}` } : null);
+  const spec = (st && st.spec) || (data.state && data.state.spec) || {};
+  const input = (spec && spec.input) || {};
+  const savedRepo = input.hf_repo || $("hf_repo").value;
+  const v = data.viewer || (done && st.specimen_id ? {
+    specimen: st.specimen_id,
+    url: `/viewer/?specimen=${encodeURIComponent(st.specimen_id)}&repo=${encodeURIComponent(savedRepo)}`
+  } : null);
   $("viewerLink2").classList.toggle("hidden", !v);
   if (v) $("viewerLink2").href = v.url;
-  $("runFiles").textContent = done
-    ? `viewers/${st.specimen_id}/ · volumes/${st.specimen_id}/ · slices/${st.specimen_id}/ → ${$("hf_repo").value}`
+  $("runFiles").innerHTML = done
+    ? `<a href="https://huggingface.co/datasets/${esc(savedRepo)}/tree/main/viewers/${encodeURIComponent(st.specimen_id)}" target="_blank" rel="noopener">View the saved bundle on Hugging Face</a> · ${esc(savedRepo)}`
     : "";
   return st.status;
 }

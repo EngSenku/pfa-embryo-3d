@@ -37,13 +37,19 @@ in their own Kaggle/HF workspace and supplies the resulting model repo.
 
 | Case | Specimen / input | Segmentation model | What the researcher supplies |
 | --- | --- | --- | --- |
-| **1. Same specimen, project model** | `CS17-6521` (Atlas `.tif + .am`, or new sections of the same case) | the project's CS17 4-group models | nothing (the project repos are the default) |
-| **2. Other specimen or any slices** | another specimen / Atlas code, **or any section archive** (including non-embryo images) | a researcher-supplied nnU-Net v2 model | HF model repo + groups manifest + `configuration` + `fold` |
-| **3. Upload sections** | a ZIP/TAR/RAR or Hugging Face dataset link, plus XY µm/px and Z µm/section | a researcher-supplied nnU-Net v2 model | the archive and the physical scale, plus the same model information as case 2 |
+| **1. CS17 specimen, project model** | `CS17-6521` or another **CS17** specimen (Atlas `.tif + .am`, or new sections) | the project's CS17 4-group models | nothing (the project repos are the default) |
+| **2. Other embryo, researcher model** | another embryo: Atlas code, or any section archive / link | a researcher-supplied nnU-Net v2 model | HF model repo + groups manifest + `configuration` + `fold` |
+| **3. Any sections, researcher model** | any tissue or object: ZIP/TAR/RAR or Hugging Face dataset link, plus XY µm/px and Z µm/section | a researcher-supplied nnU-Net v2 model | the archive and the physical scale, plus the same model information as case 2 |
 
-Case 3 is the upload shortcut of case 2: it always uses
-`input.format: raw_section_archive`. Case 2 can use either an Atlas volume or the
-same raw-archive path.
+Case 1 is stage-specific: the project models are trained for CS17, so a different
+specimen is accepted only if it is also CS17. Do not use a CS12/CS15 specimen
+with the project model; use case 2 and a model trained for that stage.
+
+Case 2 is intended for another embryo. Case 3 is the generic upload path for any
+tissue or object, including non-embryo images. The backend uses the same raw
+section path for both; the distinction is the researcher's intent, because the
+pipeline cannot verify that an image is an embryo. Case 3 is the upload shortcut
+of case 2: it always uses `input.format: raw_section_archive`.
 
 The pipeline does not assume the input is an embryo. It segments whatever
 structures the supplied model predicts; the viewer reads the bundle's structure
@@ -147,13 +153,36 @@ the published checkpoint (they are no longer hardcoded to `2d` and `0`).
 
 1. Open the app → the form.
 2. Pick one of the three cases, fill in the identifiers.
-3. **Plan** validates the spec and shows the exact notebooks and YAML.
-4. **Run** (or **Run with resume**) executes it; the status card, log and a link
-   to the 3D viewer appear as stages finish.
+3. **Preview** validates the spec and shows the exact notebooks and YAML.
+4. **Run** executes it; the status card, log and a link to the 3D viewer appear
+   as stages finish.
 
 The form writes the same YAML as the CLI. Uploaded archives are sent to
 `PFA_UPLOAD_REPO` (defaults to the shared dataset), removed from the web host,
 and referenced by URL.
+
+### Where the result is saved
+
+A completed run publishes to the run's `input.hf_repo` (default
+`senku111/embryo-3d`):
+
+```
+volumes/<specimen-id>/     registered volume + manifest
+slices/<specimen-id>/      WebP sections used by the viewer
+viewers/<specimen-id>/     manifest.json, meshes.bin, names.json
+runs/<run-id>/state.json   run state (PFA_STATE_REPO, default the same repo)
+```
+
+The finished status card shows **Open the 3D model**; its URL is
+`/viewer/?specimen=<id>&repo=<hf-repo>`. The same card links to the saved bundle
+on Hugging Face. The viewer is not limited to one specimen: its picker lists
+every `viewers/<id>/manifest.json` in the repo. It shows one entry today because
+only `CS17-6521` has a published bundle; a new run adds another entry. A direct
+viewer URL works even before the picker refreshes.
+
+The viewer reads the bundle directly from Hugging Face. Use a **public** output
+dataset for a shareable viewer link; a private dataset needs authenticated Hub
+access and is not readable by the anonymous browser.
 
 ### Server environment
 

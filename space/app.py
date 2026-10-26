@@ -14,7 +14,7 @@ Endpoints
 ``GET  /``                 the run form
 ``GET  /viewer``           the 3D viewer (``index5.html``; ``?specimen=`` selects)
 ``GET  /api/health``       which credentials are configured
-``GET  /api/specimens``    specimens that already have a viewer bundle
+``GET  /api/specimens``    specimens that already have a viewer bundle (``?repo=``)
 ``POST /api/plan``         validate the form and return the planned stages
 ``POST /api/runs``         start a run (form JSON or ``{"yaml": "<spec>"}``)
 ``GET  /api/runs``         every run and its status
@@ -31,7 +31,7 @@ import threading
 import time
 import uuid
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 import yaml
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -51,7 +51,7 @@ RUNS_DIR = Path(os.environ.get("PFA_RUNS_DIR") or ("/data/pfa-runs" if Path("/da
                                                    else ROOT / "runs"))
 RUNS_DIR.mkdir(parents=True, exist_ok=True)
 LOG_TAIL_LINES = 400
-APP_VERSION = "2026-10-26.1"
+APP_VERSION = "2026-10-26.2"
 
 app = FastAPI(title="PFA pipeline", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
@@ -444,8 +444,11 @@ def health(deep: bool = False) -> dict:
 
 
 @app.get("/api/specimens")
-def specimens() -> dict:
-    repo = os.environ.get("PFA_SHARED_REPO", "senku111/embryo-3d")
+def specimens(repo: str | None = None) -> dict:
+    """Viewer bundles in the shared repo, or in an explicit public ``repo``."""
+    repo = (repo or os.environ.get("PFA_SHARED_REPO", "senku111/embryo-3d")).strip()
+    if not repo or "/" not in repo or repo.count("/") != 1:
+        raise HTTPException(400, "repo must look like owner/name")
     try:
         items = hfio.list_specimens(repo)
     except Exception as exc:  # noqa: BLE001
@@ -577,7 +580,11 @@ def _viewer_for(state: dict) -> dict | None:
     sid = state.get("specimen_id")
     if state.get("status") != "done" or not sid:
         return None
-    return {"specimen": sid, "url": f"/viewer/?specimen={sid}"}
+    spec = state.get("spec") if isinstance(state.get("spec"), dict) else {}
+    inp = spec.get("input") if isinstance(spec.get("input"), dict) else {}
+    repo = str(inp.get("hf_repo") or _shared_repo())
+    query = urlencode({"specimen": sid, "repo": repo})
+    return {"specimen": sid, "repo": repo, "url": f"/viewer/?{query}"}
 
 
 def _valid_run_id(run_id: str) -> bool:

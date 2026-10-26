@@ -198,22 +198,20 @@ build never sees them.
 1. Open the web app → `GET /api/health` must report `"ok": true` (fast,
    local-only check). `GET /api/health?deep=1` additionally resolves the Kaggle
    account over the network (`creds.kaggle_account`).
-2. Press **Plan** with the default (case 1) form → you should see
+2. Press **Preview** with the default (case 1) form → you should see
    `registration` + `reconstruct`.
 3. Switch to **case 2**, enter another Atlas specimen id, your model repo,
-   configuration and fold → **Plan** shows the same two stages with
+   configuration and fold → **Preview** shows the same two stages with
    `MODEL_SOURCE=custom`.
 4. Switch to **case 3**, paste a small ZIP or choose one, enter XY/Z µm →
-   **Plan** uploads the archive (`POST /api/uploads`) and shows
-   `input.format=raw_section_archive` with your µm values.
-5. Press **Dry run (prepare only)** → status reaches `done` in a few seconds
-   without touching Kaggle (registration is skipped when the volume already
-   exists).
-6. Press **Run** → the first stage appears as a kernel under
+   **Preview** checks the archive and shows `input.format=raw_section_archive`
+   with your µm values.
+5. Press **Run** → the first stage appears as a kernel under
    `kernels/list?search=pfa-`. The kernel slug follows the notebook, so the
    runner polls the slug Kaggle reports rather than a guessed one.
-7. Open the viewer link after reconstruction; for a non-CS17 bundle, confirm the
-   header uses the bundle title and the CS17 Dice card is absent.
+6. Open the viewer link after reconstruction; for a non-CS17 bundle, confirm the
+   header uses the bundle title and the CS17 Dice card is absent. The status
+   card also links to `viewers/<id>/` on Hugging Face.
 
 ---
 
@@ -221,17 +219,17 @@ build never sees them.
 
 | Who | What |
 | --- | --- |
-| Researcher (no terminal) | open the web app, pick one of the three cases, **Plan**, **Run**, follow the status card, open the viewer link |
+| Researcher (no terminal) | open the web app, pick one of the three cases, **Preview**, **Run**, follow the status card, open the viewer link |
 | Researcher (own model) | train/publish an nnU-Net v2 model repo first, then use case 2 or 3 with its groups manifest, `configuration` and `fold` |
 | Researcher (terminal/CI) | `python3 run_pipeline.py --spec specs/my-run.yaml [--engine kaggle] [--resume]` |
 | Maintainer | read `GET /api/runs` on the web app, or `runs/<run_id>/` on disk |
 | Anyone | browse `https://huggingface.co/datasets/<repo>/tree/main/viewers/<id>` |
 
 Resuming: every run stores `state.json` locally **and** mirrors it to
-`runs/<run_id>/state.json` on the Hub. `--resume` (or **Run with resume**) skips
-the stages already marked `done` and adopts an in-flight Kaggle kernel rather
-than pushing a duplicate. On a free host that sleeps, the next visit to
-`/api/runs/<id>` resumes the run automatically.
+`runs/<run_id>/state.json` on the Hub. `--resume` skips the stages already marked
+`done` and adopts an in-flight Kaggle kernel rather than pushing a duplicate.
+The web form does not expose a resume button: on a free host that sleeps, the
+next visit to `/api/runs/<id>` resumes the run automatically.
 
 Artifacts are verified after every stage (`volumes/<id>`, the groups manifest,
 `viewers/<id>/manifest.json`), so a kernel that "succeeds" without pushing
@@ -275,11 +273,11 @@ anything fails the run with the log path.
 [ ] After each push: Manual Deploy → Deploy latest commit
 [ ] GET /api/version → current APP_VERSION and commit
 [ ] GET /api/health → ok
-[ ] Case 1 Atlas Plan → registration + reconstruct
-[ ] Case 2 custom model Plan → MODEL_SOURCE=custom, configuration/fold present
+[ ] Case 1 Atlas Preview → registration + reconstruct; reject a non-CS17 id
+[ ] Case 2 custom model Preview → MODEL_SOURCE=custom, configuration/fold present
 [ ] Case 3 small ZIP upload → POST /api/uploads returns a URL, raw µm present
-[ ] Dry run → done
 [ ] Real run → kernels visible in Kaggle, artifacts visible on the Hub
-[ ] /viewer/?specimen=<id> renders the bundle
+[ ] /viewer/?specimen=<id>&repo=<repo> renders the bundle
+[ ] Status card links to the saved viewers/<id>/ tree on Hugging Face
 [ ] Non-CS17 bundle: header title + no CS17 Dice card
 ```
