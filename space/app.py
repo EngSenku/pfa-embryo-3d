@@ -1,4 +1,4 @@
-"""Hugging Face Space: web form -> run spec -> the PFA pipeline on Kaggle.
+"""Hugging Face Space: web form -> run spec -> the HistoWeave pipeline on Kaggle.
 
 The Space is a thin web layer around ``pipeline.spec`` (what a run *is*) and
 ``pipeline.runner`` (how it *executes*).  Everything heavy happens in the
@@ -51,9 +51,9 @@ RUNS_DIR = Path(os.environ.get("PFA_RUNS_DIR") or ("/data/pfa-runs" if Path("/da
                                                    else ROOT / "runs"))
 RUNS_DIR.mkdir(parents=True, exist_ok=True)
 LOG_TAIL_LINES = 400
-APP_VERSION = "2026-10-26.2"
+APP_VERSION = "2026-10-26.3"
 
-app = FastAPI(title="PFA pipeline", docs_url="/api/docs", openapi_url="/api/openapi.json")
+app = FastAPI(title="HistoWeave pipeline", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
 _lock = threading.Lock()
 _threads: dict[str, threading.Thread] = {}

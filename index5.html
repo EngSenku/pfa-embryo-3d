@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>3D specimen viewer · Biometrics</title>
+<title>HistoWeave · 3D specimen viewer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500&display=swap" rel="stylesheet">
@@ -261,7 +261,7 @@ svg.i{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.5;stroke
 <div id="app">
   <div id="stage"></div>
 
-  <div id="loading"><div class="ring"></div><h2 id="loadingTitle">Embryo Atlas</h2><p id="loadMsg">Loading 3D specimen…</p></div>
+  <div id="loading"><div class="ring"></div><h2 id="loadingTitle">HistoWeave</h2><p id="loadMsg">Loading 3D specimen…</p></div>
 
   <!-- top bar -->
   <header class="topbar">
@@ -753,7 +753,7 @@ function setSpecimenHeader() {
   if (idEl) idEl.textContent = SPECIMEN_ID;
   const lt = $("loadingTitle");
   if (lt) lt.textContent = `${desc || STAGE} · ${SPECIMEN_ID}`;
-  document.title = `${SPECIMEN_ID} · 3D specimen viewer`;
+  document.title = `${SPECIMEN_ID} · HistoWeave`;
 }
 
 function goToSpecimen(id) {

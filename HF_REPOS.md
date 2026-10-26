@@ -1,4 +1,4 @@
-# Hugging Face repository inventory
+# HistoWeave — Hugging Face repository inventory
 
 Checked against the `senku111` account on 2026-10-26. Nothing was deleted.
 The account currently exposes **5 models, 14 datasets and 0 Spaces** publicly;
@@ -39,7 +39,7 @@ report figures.
 ## Unrelated to this project — safe to delete if no other project needs them
 
 These appeared in the public `senku111` listing but are not referenced by the
-PFA code, notebooks, report, `render.yaml`, or the deployed app.
+HistoWeave code, notebooks, report, `render.yaml`, or the deployed app.
 
 | Repository | Type |
 | --- | --- |
@@ -59,8 +59,8 @@ the current public listing; if they still exist, they are unrelated too.
 
 ## Notes
 
-* `senku111/pfa-embryo3d` **does not exist**. It is only an example name in
-  `DEPLOY.md` and `tools/deploy_space.sh` for an optional Hugging Face Space.
+* `senku111/histoweave` is the optional Hugging Face Space name used by
+  `tools/deploy_space.sh`; no Space exists on the account yet.
 * There are no Spaces on the account.
 * Deleting `atlas-cs17-4groups-nnunet-training` or `embryo-3d` breaks the
   deployed app. Deleting `pfa-source` or the training-only repos does not.

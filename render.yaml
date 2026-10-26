@@ -1,5 +1,8 @@
 # Render Blueprint (free web service, no PRO plan needed).
 #
+# Product name: HistoWeave. The service slug stays pfa-embryo3d so the existing
+# Render URL and environment variables keep working.
+#
 #   https://render.com -> New -> Blueprint -> pick this repository
 #
 # Set the two secrets in the Render dashboard after the first deploy:

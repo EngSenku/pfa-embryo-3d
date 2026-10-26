@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Command-line entry point for the PFA pipeline.
+"""Command-line entry point for the HistoWeave pipeline.
 
 Examples
 --------
@@ -36,7 +36,7 @@ from pipeline.spec import SpecError, build_spec  # noqa: E402
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    ap = argparse.ArgumentParser(description="Run the PFA pipeline from a run spec.")
+    ap = argparse.ArgumentParser(description="Run the HistoWeave pipeline from a run spec.")
     ap.add_argument("--spec", required=True, help="path to a run spec (YAML or JSON)")
     ap.add_argument("--engine", choices=("kaggle", "local"),
                     help="override run.engine from the spec")

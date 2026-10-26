@@ -1,6 +1,6 @@
-# Deployment
+# HistoWeave — deployment
 
-How to put this project in front of researchers so they can fill a form, press
+How to put HistoWeave in front of researchers so they can fill a form, press
 **Run**, and get a 3D model back — and how to run the same thing from a terminal
 or CI.
 
@@ -141,6 +141,9 @@ Also make sure **GPU** is enabled on that Kaggle account for the GPU stages.
 
 **Option 1 — Render from GitHub (recommended):**
 
+HistoWeave is the product name; the GitHub and Render slugs keep the historical
+`pfa-embryo-3d` identifier so the live URL and environment variables do not break.
+
 1. Push this repo to GitHub (the project is at
    <https://github.com/EngSenku/pfa-embryo-3d>).
 2. <https://dashboard.render.com> → **New → Web Service → Public Git
@@ -178,14 +181,14 @@ Free HF accounts can only create *Static* Spaces; `create_repo` returns HTTP 402
 
 ```bash
 export HF_TOKEN=hf_...
-tools/deploy_space.sh senku111/pfa-embryo3d      # create + push
+tools/deploy_space.sh senku111/histoweave       # create + push
 ```
 
 or manually:
 
 ```bash
-huggingface-cli repo create pfa-embryo3d --type space --space-sdk docker
-git remote add space https://huggingface.co/spaces/<you>/pfa-embryo3d
+huggingface-cli repo create histoweave --type space --space-sdk docker
+git remote add space https://huggingface.co/spaces/<you>/histoweave
 git push space main
 ```
 

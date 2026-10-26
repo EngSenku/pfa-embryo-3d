@@ -1,4 +1,4 @@
-# Web layer + orchestration for the PFA Space.
+# Web layer + orchestration for the HistoWeave app.
 # Heavy scientific packages are installed by the notebooks themselves on the
 # Kaggle side (they bootstrap their own venv), so the image stays small.
 fastapi>=0.110

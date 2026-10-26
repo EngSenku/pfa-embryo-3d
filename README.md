@@ -1,6 +1,6 @@
 ---
-title: PFA Embryo 3D Pipeline
-emoji: 🥚
+title: HistoWeave — 3D histology pipeline
+emoji: 🧵
 colorFrom: green
 colorTo: indigo
 sdk: docker
@@ -12,15 +12,24 @@ tags:
   - segmentation
 ---
 
-# PFA — 3D embryo reconstruction pipeline
+# HistoWeave — 3D histology reconstruction pipeline
 
-Register a specimen, segment it with nnU-Net group models, and rebuild an
-explorable 3D anatomical model: `volumes/<id>/`, `slices/<id>/` and
-`viewers/<id>/` on Hugging Face, read by the web viewer.
+HistoWeave reconstructs an explorable 3D anatomical model from serial
+histological sections. It registers the sections, segments them with nnU-Net
+group models, and publishes `volumes/<id>/`, `slices/<id>/` and `viewers/<id>/`
+to Hugging Face, where the web viewer reads them directly.
+
+The pipeline is validated on the human embryo (Carnegie stage 17) and can be
+used with any serial histology when a segmentation model trained for those
+images is supplied.
 
 Everything a researcher has to fill in is a **run spec**. The form on the web
 app, the CLI (`run_pipeline.py`) and the notebooks all consume the same spec, so
 any run can be replayed exactly.
+
+HistoWeave is the product name; the historical deployment URL, the repository
+slug `pfa-embryo-3d` and the `PFA_*` environment variables are kept for
+continuity.
 
 The LaTeX report and its compiled PDF are in [`report_pfa/`](report_pfa/);
 [`HF_REPOS.md`](HF_REPOS.md) lists every Hugging Face repository and whether the

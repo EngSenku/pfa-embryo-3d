@@ -19,6 +19,11 @@
 \usepackage{subcaption}
 \usepackage{enumitem}
 \usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\hypersetup{
+  pdftitle={HistoWeave -- Reconstruction 3D de coupes histologiques sériées},
+  pdfsubject={Chaîne computationnelle de reconstruction 3D à partir de coupes histologiques sériées ; application à l'embryon humain},
+  pdfkeywords={histologie sériée, reconstruction 3D, recalage, segmentation, nnU-Net, embryon humain}
+}
 
 \setstretch{1.1}
 \setlength{\parskip}{4pt}
@@ -28,7 +33,7 @@
 
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small PFA -- Reconstruction 3D de l'embryon humain}
+\fancyhead[L]{\small HistoWeave -- Reconstruction 3D de coupes histologiques sériées}
 \fancyhead[R]{\small ENSA Tanger}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
@@ -78,7 +83,11 @@
 
     \vspace{1.2cm}
 
-    {\LARGE \bfseries De l'histologie sériée à l'anatomie 3D : développement d'une chaîne computationnelle pour la reconstruction tridimensionnelle de l'embryon humain\par}
+    {\LARGE \bfseries HistoWeave\par}
+    \vspace{0.45cm}
+    {\large De l'histologie sériée à l'anatomie 3D\par}
+    \vspace{0.45cm}
+    {\normalsize Chaîne computationnelle pour la reconstruction tridimensionnelle de coupes histologiques sériées --- application à l'embryon humain\par}
 
     \vspace{1.2cm}
 
@@ -133,7 +142,7 @@ L'embryon humain constitue le cas d'étude principal de ce travail. Cette applic
 
 La chaîne développée est appliquée à différents stades du développement embryonnaire, avec une adaptation des modèles de segmentation aux caractéristiques anatomiques propres à chaque stade. Les reconstructions obtenues ne constituent pas uniquement des modèles de visualisation : elles offrent une représentation tridimensionnelle permettant d'étudier les volumes, les dimensions, les positions et les relations spatiales entre les structures anatomiques. Elles fournissent ainsi une base pour l'analyse quantitative de l'organisation et de l'évolution de l'anatomie embryonnaire au cours du développement.
 
-La chaîne est exposée sous la forme d'une application web gratuite qui distingue trois cas de déploiement : reproduire un spécimen CS17 (CS17-6521 ou un autre spécimen du même stade) avec les modèles du projet, soumettre un autre embryon depuis l'Atlas ou une archive avec un modèle fourni par le chercheur, ou téléverser des coupes quelconques, embryonnaires ou non, avec ce modèle et leur échelle physique. Le calcul reste délégué à Kaggle et les artefacts sont publiés sur Hugging Face.
+La chaîne HistoWeave est exposée sous la forme d'une application web gratuite qui distingue trois cas de déploiement : reproduire un spécimen CS17 (CS17-6521 ou un autre spécimen du même stade) avec les modèles du projet, soumettre un autre embryon depuis l'Atlas ou une archive avec un modèle fourni par le chercheur, ou téléverser des coupes quelconques, embryonnaires ou non, avec ce modèle et leur échelle physique. Le calcul reste délégué à Kaggle et les artefacts sont publiés sur Hugging Face.
 
 \textbf{Mots-clés :} histologie sériée, reconstruction tridimensionnelle, recalage d'images, segmentation, vision par ordinateur, intelligence artificielle, anatomie 3D, embryon humain, développement embryonnaire, morphométrie 3D.
 
@@ -148,7 +157,7 @@ The human embryo is used as the main case study. This application is particularl
 
 The developed pipeline is applied to different stages of embryonic development, with segmentation models adapted to the anatomical characteristics of each stage. The resulting reconstructions are not limited to visualization: they provide three-dimensional representations that can be used to study the volume, dimensions, position, and spatial relationships of anatomical structures. The proposed approach therefore provides a basis for the quantitative analysis of embryonic anatomy and its evolution throughout development.
 
-The pipeline is exposed through a free web application with three deployment cases: reproduce a CS17 specimen (CS17-6521 or another specimen at the same stage) with the project models, submit another embryo from the Atlas or an archive with a researcher-supplied model, or upload arbitrary sections, embryonic or not, with that model and their physical scale. Computation stays on Kaggle and the artefacts are published on Hugging Face.
+HistoWeave is exposed through a free web application with three deployment cases: reproduce a CS17 specimen (CS17-6521 or another specimen at the same stage) with the project models, submit another embryo from the Atlas or an archive with a researcher-supplied model, or upload arbitrary sections, embryonic or not, with that model and their physical scale. Computation stays on Kaggle and the artefacts are published on Hugging Face.
 
 \textbf{Keywords:} serial histology, three-dimensional reconstruction, image registration, segmentation, computer vision, artificial intelligence, 3D anatomy, human embryo, embryonic development, 3D morphometry.
 
@@ -586,13 +595,13 @@ La table n'a donc pas été corrigée en partie : elle a été entièrement reco
 
 \section{Interface pour chercheurs}\label{sec:interface}
 
-L'interface n'est plus une perspective : elle est déployée à l'adresse \url{https://pfa-embryo-3d.onrender.com} sous la forme d'une application FastAPI dans un conteneur Docker sur l'offre gratuite de Render (figure~\ref{fig:interfaceform}). Le navigateur ne fait que remplir un formulaire ; le serveur valide le \emph{spec}, pousse les notebooks sur Kaggle par l'API et suit leur état ; Hugging Face transporte les volumes, les modèles et les paquets, et le visualiseur lit directement les artefacts publiés. Aucun calcul lourd ne tourne sur le serveur web.
+La plateforme HistoWeave est déployée à l'adresse \url{https://pfa-embryo-3d.onrender.com} sous la forme d'une application FastAPI dans un conteneur Docker sur l'offre gratuite de Render (figure~\ref{fig:interfaceform}). Le navigateur ne fait que remplir un formulaire ; le serveur valide le \emph{spec}, pousse les notebooks sur Kaggle par l'API et suit leur état ; Hugging Face transporte les volumes, les modèles et les paquets, et le visualiseur lit directement les artefacts publiés. Aucun calcul lourd ne tourne sur le serveur web.
 
-\safeimg{screenshots/form.png}{0.92\textwidth}{Formulaire de lancement de l'application déployée. Les trois cas sont sélectionnables en haut ; selon le cas, le modèle, l'entrée et la calibration sont validés avant l'envoi sur Kaggle.}{fig:interfaceform}{Formulaire de l'application déployée}
+\safeimg{screenshots/form.png}{0.92\textwidth}{Formulaire de lancement d'HistoWeave. Les trois cas sont sélectionnables en haut ; selon le cas, le modèle, l'entrée et la calibration sont validés avant l'envoi sur Kaggle.}{fig:interfaceform}{Formulaire de l'application déployée}
 
 Le formulaire produit le même fichier YAML que la ligne de commande. Ce spec contient le spécimen, le format d'entrée, les dépôts Hugging Face, le modèle, la configuration et le pli, la reconstruction et le moteur d'exécution ; il est enregistré à côté des notebooks exécutés, ce qui rend chaque lancement reproductible. Le bouton \textbf{Preview} affiche les étapes et le YAML sans rien exécuter ; \textbf{Run} pousse les noyaux et affiche l'état, le journal et le lien du visualiseur. À la fin, le volume recalé, les coupes WebP et le paquet de maillages sont publiés dans \texttt{volumes/<id>/}, \texttt{slices/<id>/} et \texttt{viewers/<id>/} du dépôt Hugging Face choisi, tandis que l'état du lancement est recopié dans \texttt{runs/<id>/state.json}. Le bouton \textbf{Open the 3D model} ouvre \texttt{/viewer/?specimen=<id>\&repo=<dépôt>} ; le sélecteur du visualiseur liste tous les paquets \texttt{viewers/*/manifest.json} du dépôt, et non un seul cas. Le visualiseur lit ces artefacts directement depuis Hugging Face, ce qui suppose un dépôt public pour un lien partageable.
 
-\safeimg{screenshots/viewer.png}{0.96\textwidth}{Visualiseur 3D du paquet publié pour CS17-6521. Le sélecteur de spécimen est alimenté par les paquets \texttt{viewers/<id>/} présents sur Hugging Face ; il n'est donc pas limité à ce cas.}{fig:interfaceviewer}{Visualiseur 3D d'un paquet publié}
+\safeimg{screenshots/viewer.png}{0.96\textwidth}{Visualiseur 3D d'HistoWeave pour le paquet publié CS17-6521. Le sélecteur de spécimen est alimenté par les paquets \texttt{viewers/<id>/} présents sur Hugging Face ; il n'est donc pas limité à ce cas.}{fig:interfaceviewer}{Visualiseur 3D d'un paquet publié}
 
 \subsection{Audit de généralisation des notebooks}
 

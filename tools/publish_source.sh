@@ -28,14 +28,14 @@ git -C "$ROOT" archive HEAD | tar -x -C "$TMP"
 rm -f "$TMP/report_pfa.pdf"
 
 # A sane identity is required in the throwaway repo.
-export GIT_AUTHOR_NAME="${GIT_AUTHOR_NAME:-PFA}"
-export GIT_AUTHOR_EMAIL="${GIT_AUTHOR_EMAIL:-pfa@localhost}"
+export GIT_AUTHOR_NAME="${GIT_AUTHOR_NAME:-HistoWeave}"
+export GIT_AUTHOR_EMAIL="${GIT_AUTHOR_EMAIL:-histoweave@localhost}"
 export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
 export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
 
 git -C "$TMP" init -q -b main
 git -C "$TMP" add -A
-git -C "$TMP" commit -q -m "PFA source mirror @ ${SHA}"
+git -C "$TMP" commit -q -m "HistoWeave source mirror @ ${SHA}"
 
 echo "publishing ${SHA} to https://huggingface.co/datasets/${REPO} …"
 git -C "$TMP" push --force \

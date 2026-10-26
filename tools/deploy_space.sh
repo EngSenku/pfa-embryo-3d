@@ -2,13 +2,13 @@
 # Create the Hugging Face Space and push the committed project to it.
 #
 #   export HF_TOKEN=hf_...
-#   tools/deploy_space.sh [space-id]        # default: senku111/pfa-embryo3d
+#   tools/deploy_space.sh [space-id]        # default: senku111/histoweave
 #
 # Docker Spaces require a PRO plan on the account (Static Spaces are the only
 # free ones); the create call returns HTTP 402 until then.
 set -euo pipefail
 
-SPACE_ID="${1:-senku111/pfa-embryo3d}"
+SPACE_ID="${1:-senku111/histoweave}"
 : "${HF_TOKEN:?export HF_TOKEN=hf_... first}"
 cd "$(dirname "$0")/.."
 
