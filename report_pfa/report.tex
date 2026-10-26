@@ -588,9 +588,9 @@ La table n'a donc pas été corrigée en partie : elle a été entièrement reco
 
 L'interface n'est plus une perspective : elle est déployée à l'adresse \url{https://pfa-embryo-3d.onrender.com} sous la forme d'une application FastAPI dans un conteneur Docker sur l'offre gratuite de Render (figure~\ref{fig:interfaceform}). Le navigateur ne fait que remplir un formulaire ; le serveur valide le \emph{spec}, pousse les notebooks sur Kaggle par l'API et suit leur état ; Hugging Face transporte les volumes, les modèles et les paquets, et le visualiseur lit directement les artefacts publiés. Aucun calcul lourd ne tourne sur le serveur web.
 
-\safeimg{screenshots/form.png}{0.92\textwidth}{Formulaire de lancement de l'application déployée. Les trois cas sont sélectionnables en haut ; le modèle, l'entrée et la calibration sont validés avant l'envoi sur Kaggle.}{fig:interfaceform}{Formulaire de l'application déployée}
+\safeimg{screenshots/form.png}{0.92\textwidth}{Formulaire de lancement de l'application déployée. Les trois cas sont sélectionnables en haut ; selon le cas, le modèle, l'entrée et la calibration sont validés avant l'envoi sur Kaggle.}{fig:interfaceform}{Formulaire de l'application déployée}
 
-Le formulaire produit le même fichier YAML que la ligne de commande. Ce spec contient le spécimen, le format d'entrée, les dépôts Hugging Face, le modèle, la configuration et le pli, la reconstruction et le moteur d'exécution ; il est enregistré à côté des notebooks exécutés, ce qui rend chaque lancement reproductible. Le bouton \textbf{Plan} affiche les étapes et le YAML sans rien exécuter ; \textbf{Run} pousse les noyaux et affiche l'état, le journal et le lien du visualiseur.
+Le formulaire produit le même fichier YAML que la ligne de commande. Ce spec contient le spécimen, le format d'entrée, les dépôts Hugging Face, le modèle, la configuration et le pli, la reconstruction et le moteur d'exécution ; il est enregistré à côté des notebooks exécutés, ce qui rend chaque lancement reproductible. Le bouton \textbf{Preview} affiche les étapes et le YAML sans rien exécuter ; \textbf{Run} pousse les noyaux et affiche l'état, le journal et le lien du visualiseur.
 
 \subsection{Audit de généralisation des notebooks}
 

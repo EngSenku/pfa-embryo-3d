@@ -10,193 +10,186 @@
 <style>
 :root{
   --bg:#050606; --ink:#eef1ea; --dim:#8d928a; --faint:#5a5f58;
-  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+  --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.16);
   --lime:#d3f28c; --lime-ink:#1b2410; --yellow:#f3e23d; --red:#ff5a4f; --green:#33d68f;
-  --r-xl:28px; --r-lg:20px; --r-md:14px;
+  --r:22px; --r-sm:13px;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   font-family:"Outfit","Avenir Next","Segoe UI",system-ui,sans-serif;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;min-height:100vh;color:var(--ink);font-weight:300;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
-  background:
-    radial-gradient(70% 50% at 50% -10%, rgba(60,72,52,.45), transparent 70%),
-    radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.2px) 0 0/26px 26px,
-    var(--bg);
+  background:radial-gradient(75% 55% at 50% -18%, rgba(60,72,52,.42), transparent 72%),
+             radial-gradient(rgba(255,255,255,.055) 1px, transparent 1.2px) 0 0/28px 28px, var(--bg);
   background-attachment:fixed}
 a{color:inherit;text-decoration:none}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
-button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
 code{font-family:var(--mono);font-size:.84em;background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:#dfe7d3}
 .hidden{display:none!important}
-
-/* ---------- glass ---------- */
-.glass{background:linear-gradient(180deg,rgba(40,44,41,.72),rgba(24,27,25,.78));border:1px solid var(--line);
-  backdrop-filter:blur(22px) saturate(1.1);-webkit-backdrop-filter:blur(22px) saturate(1.1);
-  box-shadow:0 18px 50px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04)}
-.pill{display:inline-flex;align-items:center;gap:9px;height:40px;padding:0 16px;border-radius:999px;font-size:13.5px;white-space:nowrap;
-  background:rgba(34,37,35,.82);border:1px solid var(--line);backdrop-filter:blur(18px);transition:background .2s,border-color .2s}
-a.pill:hover,button.pill:hover{background:rgba(54,58,54,.92)}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--faint);flex:none}
-.dot.ok{background:var(--green);box-shadow:0 0 10px rgba(51,214,143,.7)}
-.dot.warn{background:var(--yellow);box-shadow:0 0 10px rgba(243,226,61,.5)}
+.dot.ok{background:var(--green);box-shadow:0 0 10px rgba(51,214,143,.65)}
+.dot.warn{background:var(--yellow);box-shadow:0 0 10px rgba(243,226,61,.45)}
 .dot.bad{background:var(--red)}
+.dot.run{background:var(--yellow);animation:p 1.1s infinite}
+@keyframes p{50%{opacity:.3}}
 svg.i{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
-/* ---------- top bar ---------- */
-.top{position:sticky;top:0;z-index:40;padding:14px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-  background:linear-gradient(180deg,rgba(5,6,6,.92),rgba(5,6,6,.6));backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
-.brand{font-size:21px;font-weight:400;letter-spacing:-.01em;display:flex;align-items:baseline;gap:8px}
+/* header */
+.top{position:sticky;top:0;z-index:40;height:64px;padding:0 24px;display:flex;align-items:center;gap:12px;
+  background:linear-gradient(180deg,rgba(5,6,6,.94),rgba(5,6,6,.68));backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.brand{font-size:20px;font-weight:400;letter-spacing:-.01em;display:flex;align-items:baseline;gap:7px}
 .brand b{font-weight:500}
 .brand span{color:var(--lime)}
-.brand small{font-size:12px;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-left:6px}
+.brand small{font-size:11px;color:var(--dim);letter-spacing:.16em;text-transform:uppercase;margin-left:5px}
 .spacer{flex:1}
-.top select.pill{appearance:none;-webkit-appearance:none;padding-right:16px;max-width:260px;color:var(--ink);cursor:pointer}
-.top select.pill option{color:#111}
+.pill{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:999px;font-size:13px;white-space:nowrap;
+  background:rgba(34,37,35,.82);border:1px solid var(--line);transition:background .2s,border-color .2s}
+a.pill:hover{background:rgba(54,58,54,.92)}
 .pill.lime{background:var(--lime);color:var(--lime-ink);border-color:transparent;font-weight:500}
 .pill.lime:hover{background:#e0f7a8}
 
-/* ---------- hero ---------- */
-.hero{max-width:1320px;margin:0 auto;padding:44px 24px 10px}
-.eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--lime);margin:0 0 12px}
-.hero h1{margin:0;font-weight:200;font-size:clamp(34px,4.6vw,56px);line-height:1.04;letter-spacing:-.02em;max-width:900px}
-.hero h1 em{font-style:normal;color:var(--lime);font-weight:300}
-.hero p{margin:18px 0 0;max-width:760px;color:var(--dim);font-size:15.5px}
-.flow{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px;align-items:center;font-size:13px;color:var(--dim)}
-.flow span.s{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
-.flow span.s b{font-weight:400;color:var(--ink)}
-.flow svg{color:var(--faint)}
+/* page */
+.shell{width:min(880px,calc(100% - 40px));margin:0 auto;padding:44px 0 80px}
+.intro{margin:0 0 30px}
+.intro h1{margin:0;font-weight:200;font-size:clamp(32px,5vw,46px);line-height:1.06;letter-spacing:-.025em;max-width:720px}
+.intro h1 em{font-style:normal;color:var(--lime);font-weight:300}
+.intro p{margin:12px 0 0;max-width:570px;color:var(--dim);font-size:14.5px}
 
-/* ---------- layout ---------- */
-.wrap{max-width:1320px;margin:0 auto;padding:22px 24px 90px;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(380px,.88fr);gap:22px;align-items:start}
-@media (max-width:1060px){.wrap{grid-template-columns:1fr}}
-.col-r{position:sticky;top:78px;display:flex;flex-direction:column;gap:16px;max-height:calc(100vh - 96px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.15) transparent;padding-bottom:4px}
-@media (max-width:1060px){.col-r{position:static;max-height:none;overflow:visible}}
-.col-r::-webkit-scrollbar{width:6px}.col-r::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:6px}
-
-/* ---------- case selector ---------- */
-.cases{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-@media (max-width:760px){.cases{grid-template-columns:1fr}}
-.case{position:relative;text-align:left;border-radius:var(--r-lg);padding:16px 16px 15px;background:linear-gradient(180deg,rgba(40,44,41,.7),rgba(26,29,27,.74));
-  border:1px solid var(--line);backdrop-filter:blur(18px);transition:border-color .2s,transform .2s,background .2s}
+/* cases */
+.cases{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 10px}
+.case{display:flex;align-items:center;gap:10px;text-align:left;min-height:58px;padding:11px 13px;border-radius:var(--r-sm);
+  background:rgba(32,35,33,.68);border:1px solid var(--line);transition:border-color .2s,background .2s,transform .2s}
 .case:hover{border-color:rgba(211,242,140,.35);transform:translateY(-1px)}
-.case .n{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;font-size:13px;background:rgba(255,255,255,.08);color:var(--dim);margin-bottom:12px;transition:.2s}
-.case b{display:block;font-weight:400;font-size:15px;line-height:1.25}
-.case i{display:block;font-style:normal;color:var(--dim);font-size:12.5px;line-height:1.4;margin-top:6px}
-.case.on{border-color:rgba(211,242,140,.7);background:linear-gradient(180deg,rgba(60,72,46,.55),rgba(30,36,26,.7));box-shadow:0 0 0 1px rgba(211,242,140,.22),0 0 40px rgba(211,242,140,.07)}
+.case .n{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;font-size:11.5px;background:rgba(255,255,255,.08);color:var(--dim);flex:none}
+.case b{font-weight:400;font-size:13.5px;line-height:1.2}
+.case.on{border-color:rgba(211,242,140,.7);background:linear-gradient(180deg,rgba(60,72,46,.56),rgba(30,36,26,.72));box-shadow:0 0 0 1px rgba(211,242,140,.16)}
 .case.on .n{background:var(--lime);color:var(--lime-ink)}
+.caseHint{min-height:20px;margin:0 0 18px 2px;color:var(--dim);font-size:12.5px}
+@media (max-width:620px){.cases{grid-template-columns:1fr}.case{min-height:48px}}
 
-/* ---------- form steps ---------- */
-.steps{margin-top:16px;display:flex;flex-direction:column;gap:14px}
-.step{border-radius:var(--r-xl);padding:22px 24px 24px}
-.step>h3{margin:0 0 4px;font-weight:300;font-size:18px;display:flex;align-items:center;gap:12px}
-.step>h3 .num{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;font-size:12px;font-weight:400;background:rgba(211,242,140,.16);color:var(--lime)}
-.step>.lead{margin:0 0 4px 38px;font-size:12.5px;color:var(--dim)}
-.row{display:grid;gap:14px;margin-top:16px}
-.row.two{grid-template-columns:1fr 1fr}
-.row.three{grid-template-columns:1fr 1fr 1fr}
-@media (max-width:760px){.row.two,.row.three{grid-template-columns:1fr}}
-label{display:block;font-size:12.5px;color:var(--dim);margin-bottom:6px;letter-spacing:.01em}
+/* card */
+.card{background:linear-gradient(180deg,rgba(40,44,41,.72),rgba(24,27,25,.8));border:1px solid var(--line);
+  border-radius:var(--r);padding:26px 28px;backdrop-filter:blur(22px) saturate(1.1);-webkit-backdrop-filter:blur(22px) saturate(1.1);
+  box-shadow:0 18px 50px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.04)}
+@media (max-width:620px){.card{padding:22px 18px}.shell{width:calc(100% - 28px);padding-top:30px}}
+.field{margin-top:20px}
+.field:first-child{margin-top:0}
+label{display:block;font-size:12.5px;color:var(--dim);margin-bottom:7px;letter-spacing:.01em}
 label b{color:var(--lime);font-weight:400}
-input,select,textarea{width:100%;background:rgba(0,0,0,.34);border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:11px 13px;
+input,select{width:100%;background:rgba(0,0,0,.34);border:1px solid var(--line);color:var(--ink);border-radius:11px;padding:11px 13px;
   font:400 13.5px/1.35 var(--mono);outline:none;transition:border-color .15s,background .15s}
 select{appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:34px;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238d928a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 12px center}
 select option{background:#151816;color:var(--ink)}
-input::placeholder,textarea::placeholder{color:var(--faint)}
-input:hover,select:hover,textarea:hover{border-color:var(--line2)}
-input:focus,select:focus,textarea:focus{border-color:rgba(211,242,140,.7);background:rgba(0,0,0,.46)}
-input.bad,select.bad,textarea.bad{border-color:var(--red);background:rgba(255,90,79,.06)}
-textarea{min-height:120px;resize:vertical}
-.hint{font-size:12px;color:var(--dim);margin-top:7px;line-height:1.5}
+input::placeholder{color:var(--faint)}
+input:hover,select:hover{border-color:var(--line2)}
+input:focus,select:focus{border-color:rgba(211,242,140,.7);background:rgba(0,0,0,.46)}
+input.bad{border-color:var(--red);background:rgba(255,90,79,.06)}
+.hint{font-size:11.5px;color:var(--dim);margin-top:6px;line-height:1.45}
 .hint b{color:var(--ink);font-weight:400}
-.sw{display:flex;align-items:center;gap:12px;margin-top:16px;cursor:pointer;font-size:13.5px;color:var(--ink);user-select:none}
-.sw label{margin:0;color:var(--ink);font-size:13.5px;cursor:pointer}
-.sw input{position:absolute;opacity:0;width:0;height:0}
-.sw .tr{width:38px;height:22px;border-radius:999px;background:rgba(255,255,255,.14);position:relative;transition:background .2s;flex:none}
-.sw .tr::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
-.sw input:checked + .tr{background:var(--lime)}
-.sw input:checked + .tr::after{transform:translateX(16px);background:var(--lime-ink)}
-.sw input:focus-visible + .tr{outline:2px solid var(--lime);outline-offset:2px}
-.sw.inline{margin-top:0;align-self:end;height:44px}
-.sub{margin-top:18px;padding:16px 16px 18px;border-radius:var(--r-lg);background:rgba(255,255,255,.03);border:1px solid var(--line)}
-.sub .row:first-child{margin-top:0}
-.sub>h4{margin:0 0 2px;font-weight:400;font-size:13px;color:var(--lime);letter-spacing:.08em;text-transform:uppercase}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:minmax(0,1fr) 150px 92px;gap:12px}
+@media (max-width:620px){.row2,.row3{grid-template-columns:1fr}}
 
-details.adv{border-radius:var(--r-xl);padding:0}
-details.adv summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:20px 24px;font-size:18px;font-weight:300;border-radius:var(--r-xl)}
-details.adv summary::-webkit-details-marker{display:none}
-details.adv summary small{font-size:12.5px;color:var(--dim);margin-left:auto}
-details.adv summary .chev{transition:transform .2s;color:var(--dim)}
-details.adv[open] summary .chev{transform:rotate(180deg)}
-details.adv .in{padding:0 24px 24px}
+/* input switch */
+.inputHead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:20px;flex-wrap:wrap}
+.inputHead>span{font-size:12.5px;color:var(--dim);margin-bottom:7px}
+.seg{display:inline-flex;padding:3px;gap:3px;border-radius:999px;background:rgba(0,0,0,.3);border:1px solid var(--line);margin-bottom:14px}
+.seg button{height:31px;padding:0 13px;border-radius:999px;font-size:12px;color:var(--dim);transition:.2s}
+.seg button.on{background:rgba(211,242,140,.16);color:var(--lime)}
+.note{margin:0 0 2px;padding:11px 13px;border-radius:11px;background:rgba(255,255,255,.035);border:1px solid var(--line);color:var(--dim);font-size:12px}
+.drop{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:16px;border-radius:13px;
+  border:1px dashed rgba(255,255,255,.2);background:rgba(0,0,0,.2);cursor:pointer;transition:.2s}
+.drop:hover,.drop.over{border-color:rgba(211,242,140,.6);background:rgba(211,242,140,.045)}
+.drop b{font-weight:400;color:var(--ink);font-size:13px}
+.drop small{font:400 11px/1.4 var(--mono);color:var(--dim)}
+.drop svg{position:absolute;right:16px;top:17px;color:var(--dim);width:18px;height:18px}
+.drop input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.or{display:flex;align-items:center;gap:10px;margin:12px 0 8px;color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.12em}
+.or::before,.or::after{content:"";height:1px;background:var(--line);flex:1}
 
-/* ---------- action bar ---------- */
-.actionbar{position:sticky;bottom:14px;z-index:30;margin-top:16px;border-radius:24px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.btn{height:44px;padding:0 20px;border-radius:999px;font-size:14px;display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,.08);border:1px solid var(--line);transition:background .2s,transform .1s,opacity .2s}
+/* advanced */
+details.advanced{margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
+details.advanced summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--dim)}
+details.advanced summary::-webkit-details-marker{display:none}
+details.advanced summary::after{content:"+";margin-left:auto;color:var(--faint);font-size:16px;line-height:1}
+details.advanced[open] summary::after{content:"−"}
+details.advanced .in{padding-top:16px}
+.check{display:flex;align-items:center;gap:9px;margin-top:13px;font-size:12.5px;color:var(--dim);cursor:pointer}
+.check input{width:16px;height:16px;accent-color:var(--lime);flex:none}
+.check label{margin:0;color:inherit;font-size:inherit;cursor:pointer}
+
+/* actions */
+.actions{display:flex;justify-content:flex-end;gap:9px;margin-top:25px;flex-wrap:wrap}
+.btn{height:43px;padding:0 20px;border-radius:999px;font-size:13.5px;display:inline-flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.08);border:1px solid var(--line);transition:background .2s,transform .1s,opacity .2s}
 .btn:hover{background:rgba(255,255,255,.15)}
 .btn:active{transform:scale(.98)}
 .btn.primary{background:var(--lime);color:var(--lime-ink);border-color:transparent;font-weight:500;padding:0 26px}
 .btn.primary:hover{background:#e0f7a8}
 .btn:disabled{opacity:.45;cursor:not-allowed}
-.msgs{flex:1 1 100%;display:flex;flex-direction:column;gap:6px;empty-cells:hide}
+.msgs{display:flex;flex-direction:column;gap:6px;margin-top:12px}
 .msgs:empty{display:none}
-.msg{font-size:12.5px;line-height:1.45;padding:8px 12px;border-radius:12px;display:flex;gap:9px;align-items:flex-start}
-.msg svg{margin-top:2px}
+.msg{font-size:12.5px;line-height:1.45;padding:9px 12px;border-radius:11px}
 .msg.err{background:rgba(255,90,79,.12);color:#ffb3ac;border:1px solid rgba(255,90,79,.28)}
 .msg.warn{background:rgba(243,226,61,.08);color:#e8dc7a;border:1px solid rgba(243,226,61,.2)}
 
-/* ---------- right: run panel ---------- */
-.panel{border-radius:var(--r-xl);padding:20px 22px 22px}
-.panel h2{margin:0;font-weight:300;font-size:18px;display:flex;align-items:center;gap:10px}
-.panel h2 small{font-size:12px;color:var(--dim);margin-left:auto;font-weight:300}
-.panel .tools{margin-left:auto;display:flex;gap:6px}
-.mini{height:28px;padding:0 11px;border-radius:999px;font-size:12px;color:var(--dim);background:rgba(255,255,255,.07);border:1px solid var(--line);transition:.2s}
-.mini:hover{color:var(--ink);background:rgba(255,255,255,.14)}
-.state{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-.chip{font:400 12px/1 var(--mono);padding:7px 11px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--dim);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* status */
+.status{margin-top:16px}
+.statusHead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.statusHead b{font-weight:400;font-size:15px}
+.state{display:flex;gap:7px;flex-wrap:wrap;margin-left:auto}
+.chip{font:400 11.5px/1 var(--mono);padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--dim);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chip b{color:var(--ink);font-weight:500}
 .chip.done b{color:var(--green)}.chip.failed b{color:var(--red)}.chip.running b{color:var(--yellow)}
-.chip.failed{border-color:rgba(255,90,79,.35)}
-.prog{margin-top:16px}
-.prog .bar{height:6px;border-radius:6px;background:rgba(255,255,255,.1);overflow:hidden}
-.prog .bar i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--green),var(--lime));transition:width .5s}
+.prog{margin-top:15px}
+.prog .bar{height:5px;border-radius:5px;background:rgba(255,255,255,.1);overflow:hidden}
+.prog .bar i{display:block;height:100%;width:0;border-radius:5px;background:linear-gradient(90deg,var(--green),var(--lime));transition:width .5s}
 .prog.fail .bar i{background:var(--red)}
-.prog .t{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--dim)}
-.stages{margin:14px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px;counter-reset:s}
-.stages li{display:flex;gap:12px;align-items:flex-start;padding:11px 13px;border-radius:14px;background:rgba(0,0,0,.26);border:1px solid var(--line);font-size:13.5px;transition:border-color .2s}
-.stages li .dot{margin-top:7px}
-.stages li .dot.run{background:var(--yellow);animation:p 1.1s infinite}
-.stages li .dot.done{background:var(--green)}.stages li .dot.fail{background:var(--red)}.stages li .dot.skip{background:#5b6570}
+.prog .t{display:flex;justify-content:space-between;margin-top:7px;font-size:11.5px;color:var(--dim)}
+.stages{margin:15px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
+.stages li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:11px;background:rgba(0,0,0,.25);border:1px solid var(--line);font-size:13px}
+.stages li .dot{margin-top:6px}
 .stages li.cur{border-color:rgba(243,226,61,.35)}
 .stages li.err{border-color:rgba(255,90,79,.4)}
 .stages b{font-weight:400}
-.stages em{font-style:normal;display:block;color:var(--dim);font-size:11.5px;font-family:var(--mono);margin-top:2px;word-break:break-all}
-.stages .gpu{font-size:10.5px;letter-spacing:.08em;padding:2px 7px;border-radius:6px;background:rgba(211,242,140,.16);color:var(--lime);margin-left:6px;vertical-align:1px}
-.stages .empty,.empty{color:var(--faint);font-size:13px;padding:10px 2px;border:0;background:none}
-@keyframes p{50%{opacity:.3}}
-.openbtn{margin-top:16px;display:flex;align-items:center;justify-content:center;gap:10px;height:48px;border-radius:999px;background:var(--lime);color:var(--lime-ink);font-weight:500}
+.stages em{font-style:normal;display:block;color:var(--dim);font-size:11px;font-family:var(--mono);margin-top:2px;word-break:break-all}
+.openbtn{margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;height:42px;border-radius:999px;background:var(--lime);color:var(--lime-ink);font-weight:500;font-size:13.5px}
 .openbtn:hover{background:#e0f7a8}
-.runerr{color:#ffb3ac;font-size:13px;margin-top:12px}
+.runerr{color:#ffb3ac;font-size:12.5px;margin-top:11px}
 .runerr:empty{display:none}
-.files{font:400 11.5px/1.5 var(--mono);color:var(--dim);margin-top:12px;word-break:break-all}
+.files{font:400 11px/1.5 var(--mono);color:var(--dim);margin-top:10px;word-break:break-all}
 .files:empty{display:none}
+details.more{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+details.more summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim)}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::after{content:"+";margin-left:auto;color:var(--faint)}
+details.more[open] summary::after{content:"−"}
+details.more .body{padding-top:12px}
 pre{margin:0}
-pre.yaml,pre.log{margin-top:14px;border-radius:16px;background:rgba(0,0,0,.42);border:1px solid var(--line);padding:14px 16px;overflow:auto;font:400 12px/1.6 var(--mono);scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
-pre.yaml{max-height:300px;color:#cfe3c0}
-pre.log{height:300px;color:#aebaa8;white-space:pre-wrap;word-break:break-word}
-.hist{list-style:none;padding:0;margin:12px 0 0;display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;scrollbar-width:thin}
-.hist li{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:14px;cursor:pointer;background:rgba(255,255,255,.035);border:1px solid transparent;font-size:13px;transition:.15s}
+pre.yaml,pre.log{margin-top:10px;border-radius:11px;background:rgba(0,0,0,.42);border:1px solid var(--line);padding:12px 14px;overflow:auto;font:400 11.5px/1.6 var(--mono);scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
+pre.yaml{max-height:260px;color:#cfe3c0}
+pre.log{height:260px;color:#aebaa8;white-space:pre-wrap;word-break:break-word}
+.mini{height:27px;padding:0 10px;border-radius:999px;font-size:11.5px;color:var(--dim);background:rgba(255,255,255,.07);border:1px solid var(--line);transition:.2s}
+.mini:hover{color:var(--ink);background:rgba(255,255,255,.14)}
+.hist{list-style:none;padding:0;margin:12px 0 0;display:flex;flex-direction:column;gap:6px}
+.hist li{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:11px;cursor:pointer;background:rgba(255,255,255,.035);border:1px solid transparent;font-size:12.5px}
 .hist li:hover{background:rgba(255,255,255,.08)}
 .hist li.on{border-color:rgba(211,242,140,.5);background:rgba(211,242,140,.06)}
 .hist .meta{min-width:0;flex:1}
-.hist .id{font:400 11.5px var(--mono);color:var(--dim);display:block}
+.hist .id{font:400 11px var(--mono);color:var(--dim);display:block}
 .hist .nm{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hist .st{font-size:11.5px;color:var(--dim);display:flex;align-items:center;gap:7px;flex:none}
+.hist .st{font-size:11px;color:var(--dim);display:flex;align-items:center;gap:6px;flex:none}
 .hist .st.done{color:var(--green)}.hist .st.failed{color:var(--red)}.hist .st.running{color:var(--yellow)}
 .hist .st.done .dot{background:var(--green)}.hist .st.failed .dot{background:var(--red)}.hist .st.running .dot{background:var(--yellow);animation:p 1.1s infinite}
-.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:90;padding:9px 18px;border-radius:999px;background:rgba(18,20,18,.94);border:1px solid var(--line);font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s}
+details.history{margin-top:16px;padding:16px 18px}
+details.history summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--dim)}
+details.history summary::-webkit-details-marker{display:none}
+details.history summary::after{content:"+";margin-left:auto;color:var(--faint)}
+details.history[open] summary::after{content:"−"}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:90;padding:9px 16px;border-radius:999px;background:rgba(18,20,18,.96);border:1px solid var(--line);font-size:12.5px;opacity:0;pointer-events:none;transition:opacity .25s}
 .toast.show{opacity:1}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -206,368 +199,288 @@ pre.log{height:300px;color:#aebaa8;white-space:pre-wrap;word-break:break-word}
 <header class="top">
   <div class="brand"><b>PFA<span>·</span>Embryo</b> 3D <small>Pipeline</small></div>
   <div class="spacer"></div>
-  <span class="pill" id="healthPill"><span class="dot" id="healthDot"></span><span id="health">checking credentials…</span></span>
-  <select class="pill" id="specOpen" aria-label="Open a specimen in the viewer"><option value="">Open specimen in viewer…</option></select>
-  <a class="pill lime" href="/viewer/" id="viewerLink"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg><span id="viewerLabel">3D viewer</span></a>
-  <a class="pill" href="/api/docs">API</a>
+  <span class="pill" id="healthPill" title="Server credentials"><span class="dot" id="healthDot"></span><span id="health">Checking…</span></span>
+  <a class="pill lime" href="/viewer/"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Viewer</a>
 </header>
 
-<section class="hero">
-  <p class="eyebrow">Reconstruction pipeline</p>
-  <h1>From serial sections to a <em>publishable 3D atlas</em>.</h1>
-  <p>
-    Register the sections, run the nnU-Net group segmenters, and publish
-    <code>viewers/&lt;id&gt;/</code> + <code>volumes/&lt;id&gt;/</code> to Hugging Face.
-    Notebooks run on <b style="font-weight:400;color:var(--ink)">Kaggle GPUs</b> in your own account; this page only fills in the parameters and watches the run.
-  </p>
-  <div class="flow" aria-label="Pipeline stages">
-    <span class="s"><b>Register</b> sections</span>
-    <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    <span class="s"><b>Reuse</b> nnU-Net</span>
-    <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    <span class="s"><b>Segment</b> structures</span>
-    <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    <span class="s"><b>Reconstruct</b> meshes</span>
-    <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    <span class="s"><b>Publish</b> to Hugging Face</span>
-  </div>
-</section>
+<main class="shell">
+  <section class="intro">
+    <h1>Build a 3D model from <em>serial sections</em>.</h1>
+    <p>Choose a case, fill the essentials, and send the computation to Kaggle.</p>
+  </section>
 
-<main class="wrap">
+  <nav class="cases" role="tablist" aria-label="Run type">
+    <button class="case on" data-case="same" role="tab" aria-selected="true"><span class="n">1</span><b>Same specimen</b></button>
+    <button class="case" data-case="other" role="tab" aria-selected="false"><span class="n">2</span><b>Other specimen</b></button>
+    <button class="case" data-case="upload" role="tab" aria-selected="false"><span class="n">3</span><b>Upload sections</b></button>
+  </nav>
+  <p class="caseHint" id="caseHint">CS17-6521 with the project models. Add new sections of the same specimen if needed.</p>
 
-  <!-- ============================== FORM ============================== -->
-  <div class="col-l">
-
-    <div class="cases" role="tablist" aria-label="Run type">
-      <button class="case on" data-case="same" role="tab"><span class="n">1</span><b>Same specimen, project model</b><i>CS17-6521 with the project's CS17 models. Atlas volume, or new sections of the same case.</i></button>
-      <button class="case" data-case="other" role="tab"><span class="n">2</span><b>Other specimen or slices</b><i>Atlas .tif + .am, or your own sections. Bring your nnU-Net model.</i></button>
-      <button class="case" data-case="upload" role="tab"><span class="n">3</span><b>Upload sections</b><i>ZIP or dataset link + XY/Z µm. Bring your nnU-Net model.</i></button>
+  <form class="card" id="runForm" novalidate>
+    <div class="field">
+      <label for="specimen_id">Specimen ID <b>*</b></label>
+      <input id="specimen_id" value="CS17-6521" autocomplete="off" spellcheck="false" />
+      <div class="hint" id="idHint">Used for the folder name. Atlas IDs look like <code>CS17-6521</code>.</div>
     </div>
 
-    <div class="steps">
+    <div id="inputWrap">
+      <div class="inputHead" id="inputHead">
+        <span>Input</span>
+        <div class="seg" id="inputChoice" role="group" aria-label="Input type">
+          <button type="button" data-fmt="atlas" class="on">Atlas volume</button>
+          <button type="button" data-fmt="raw">Sections</button>
+        </div>
+      </div>
 
-      <section class="step glass">
-        <h3><span class="num">1</span>Specimen</h3>
-        <p class="lead">Identity and display name of the specimen.</p>
-        <div class="row three">
-          <div><label for="specimen_id">Specimen ID <b>*</b></label><input id="specimen_id" value="CS17-6521" autocomplete="off" spellcheck="false" /></div>
-          <div><label for="stage">Carnegie stage</label><input id="stage" value="CS17" autocomplete="off" /></div>
-          <div><label for="atlas_specimen_id">Atlas specimen code</label><input id="atlas_specimen_id" value="6521" autocomplete="off" /></div>
-        </div>
-        <div class="row">
-          <div><label for="description">Description (shown in the viewer)</label>
-            <input id="description" value="Carnegie Stage 17, specimen 6521" /></div>
-        </div>
-        <div class="hint">This ID becomes <code>volumes/&lt;id&gt;/</code>, <code>slices/&lt;id&gt;/</code> and <code>viewers/&lt;id&gt;/</code> in the shared dataset — it is how the viewer finds the bundle.</div>
-      </section>
+      <div id="atlasBox">
+        <p class="note">The Atlas <code>.tif</code> and <code>.am</code> files are resolved from the specimen ID.</p>
+      </div>
 
-      <section class="step glass">
-        <h3><span class="num">2</span>Input &amp; registration</h3>
-        <p class="lead">Where the grey-level volume comes from and how it is aligned.</p>
-        <div class="row three">
-          <div><label for="input_format">Input</label>
-            <select id="input_format">
-              <option value="atlas_am_volume">Atlas grey volume (.tif + .am)</option>
-              <option value="raw_section_archive">Serial sections (ZIP / TAR / dataset link)</option>
-            </select></div>
-          <div><label for="input_needed">Run registration</label>
-            <select id="input_needed">
-              <option value="auto">auto — only if the volume is missing on Hugging Face</option>
-              <option value="true">always</option>
-              <option value="false">never</option>
-            </select></div>
-          <div><label for="registration_mode">Alignment mode</label>
-            <select id="registration_mode"><option>always</option><option>never</option><option>auto</option></select></div>
+      <div id="rawBox" class="hidden">
+        <label class="drop" id="dropZone" for="raw_file">
+          <input id="raw_file" type="file" accept=".zip,.tar,.tar.gz,.tgz,.tar.bz2,.tbz2,.tar.xz,.txz,.rar" />
+          <b>Choose a ZIP/TAR archive</b>
+          <small id="fileName">or drop it here</small>
+          <svg class="i" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
+        </label>
+        <div class="or">or</div>
+        <input id="raw_url" placeholder="https://…/sections.zip  ·  Hugging Face dataset link" spellcheck="false" />
+        <div class="row2" style="margin-top:12px">
+          <div><label for="raw_xy_um">XY pixel size (µm) <b>*</b></label><input id="raw_xy_um" type="number" min="0" step="0.001" placeholder="4.479" /></div>
+          <div><label for="raw_z_um">Section spacing (µm) <b>*</b></label><input id="raw_z_um" type="number" min="0" step="0.1" placeholder="10" /></div>
         </div>
-        <input type="hidden" id="raw_mode" value="url" />
-        <div class="row" id="atlasRow">
-          <div><label for="atlas_grey_tif_url">Atlas grey tif URL (blank = build from stage + code)</label>
-            <input id="atlas_grey_tif_url" placeholder="http://3datlas.3dembryo.nl/3DAtlas_CS17-6521-grey-v2016-01.tif" spellcheck="false" />
-            <div class="hint">The notebook probes the known release suffixes (v2016-01/02/03). Leave empty unless the URL is non-standard.</div></div>
-        </div>
-        <div class="row two hidden" id="rawRow">
-          <div><label for="raw_url">Archive URL or Hugging Face dataset link</label>
-            <input id="raw_url" placeholder="https://…/sections.zip or https://huggingface.co/datasets/you/sections" spellcheck="false" />
-            <div class="hint">A direct ZIP/TAR/RAR, a Hub file URL, or a whole Hub dataset (snapshot). Private Hub repos use the server's HF token.</div></div>
-          <div><label for="raw_file">Or upload an archive</label>
-            <input id="raw_file" type="file" accept=".zip,.tar,.tar.gz,.tgz,.tar.bz2,.tbz2,.tar.xz,.txz,.rar" />
-            <div class="hint">Uploaded to the shared HF dataset when you press Plan or Run. For very large sets, paste a dataset link instead.</div></div>
-        </div>
-        <div class="row two hidden" id="rawRow2">
-          <div><label for="raw_xy_um">XY pixel size (µm) <b>*</b></label><input id="raw_xy_um" type="number" step="0.001" placeholder="4.479" /></div>
-          <div><label for="raw_z_um">Section spacing (µm) <b>*</b></label><input id="raw_z_um" type="number" step="0.1" placeholder="10" /></div>
-        </div>
-        <div class="row two">
-          <div><label for="hf_repo">Shared HF dataset (volumes + viewers)</label><input id="hf_repo" value="senku111/embryo-3d" spellcheck="false" />
-            <div class="hint">Point it at a dataset <b>your Hugging Face token can write to</b> — the default belongs to the original project.</div></div>
-          <label class="sw inline" for="hf_private"><input type="checkbox" id="hf_private" /><span class="tr"></span>private dataset (private specimens)</label>
-        </div>
-      </section>
+        <div class="hint">Files upload to Hugging Face; a link may point to a private Hub dataset.</div>
+      </div>
+    </div>
 
-      <section class="step glass">
-        <h3><span class="num">3</span>Segmentation models</h3>
-        <p class="lead">Case 1 uses the project's CS17 group models. Cases 2 and 3 use the nnU-Net model you trained and published on Hugging Face.</p>
-        <div class="row two">
-          <div><label for="model_source">Model source</label>
-            <select id="model_source">
-              <option value="pretrained">project — the CS17 4-group models</option>
-              <option value="custom">researcher — my nnU-Net model repo</option>
-            </select></div>
-          <div><label for="model_configuration">nnU-Net configuration</label>
-            <select id="model_configuration">
-              <option value="2d">2d</option>
-              <option value="3d_fullres">3d_fullres</option>
-              <option value="3d_lowres">3d_lowres</option>
-              <option value="3d_cascade_fullres">3d_cascade_fullres</option>
-            </select>
-            <div class="hint">Must match the configuration you trained. Case 1 uses <code>2d</code>.</div></div>
+    <div id="modelBox" class="field hidden">
+      <div class="row3">
+        <div><label for="model_repo">Model repo <b>*</b></label><input id="model_repo" placeholder="your-user/atlas-cs12-nnunet" spellcheck="false" /></div>
+        <div>
+          <label for="model_configuration">Configuration</label>
+          <select id="model_configuration">
+            <option value="2d">2d</option>
+            <option value="3d_fullres">3d_fullres</option>
+            <option value="3d_lowres">3d_lowres</option>
+            <option value="3d_cascade_fullres">3d_cascade_fullres</option>
+          </select>
         </div>
+        <div><label for="model_fold">Fold</label><input id="model_fold" type="number" min="0" step="1" value="0" /></div>
+      </div>
+      <div class="hint">Use the configuration and fold of your published checkpoint.</div>
+    </div>
 
-        <div id="customBox" class="sub hidden">
-          <h4>Researcher nnU-Net</h4>
-          <div class="row three">
-            <div><label for="model_repo">Your nnU-Net model repo (HF model) <b>*</b></label>
-              <input id="model_repo" placeholder="my-user/atlas-cs12-nnunet" spellcheck="false" />
-              <div class="hint">Must contain the <code>groupNN_* / nnUNet_results / Dataset7xx_* / fold_N/…</code> tree.</div></div>
-            <div><label for="groups_manifest_in_repo">Groups manifest path (blank = auto)</label>
-              <input id="groups_manifest_in_repo" placeholder="groups_manifest.json" spellcheck="false" /></div>
-            <div><label for="model_fold">Fold</label><input id="model_fold" type="number" min="0" step="1" value="0" /></div>
+    <details class="advanced">
+      <summary>Advanced</summary>
+      <div class="in">
+        <div class="field">
+          <label for="hf_repo">Save results to</label>
+          <input id="hf_repo" value="senku111/embryo-3d" spellcheck="false" />
+          <label class="check"><input type="checkbox" id="hf_private" /><span>Private dataset</span></label>
+        </div>
+        <div id="manifestWrap" class="field hidden">
+          <label for="groups_manifest_in_repo">Groups manifest path (optional)</label>
+          <input id="groups_manifest_in_repo" placeholder="groups_manifest.json" spellcheck="false" />
+          <div class="row2" style="margin-top:12px">
+            <div><label for="norm_lo">Normalisation low</label><input id="norm_lo" type="number" step="0.001" placeholder="auto" /></div>
+            <div><label for="norm_hi">Normalisation high</label><input id="norm_hi" type="number" step="0.001" placeholder="auto" /></div>
           </div>
-          <div class="row two">
-            <div><label for="norm_lo">Normalisation low (optional)</label><input id="norm_lo" type="number" step="0.001" placeholder="(from manifest)" /></div>
-            <div><label for="norm_hi">Normalisation high (optional)</label><input id="norm_hi" type="number" step="0.001" placeholder="(from manifest)" /></div>
-          </div>
-          <div class="row">
-            <div><label for="groups_json">Inline groups manifest (optional — YAML/JSON)</label>
-              <textarea id="groups_json" placeholder="groups:&#10;  - group_index: 0&#10;    dataset_id: 701&#10;    dataset_name: AtlasCS12Group0&#10;    atlas_ids: [1, 2, 3]&#10;normalization:&#10;  global_lo: 0&#10;  global_hi: 65535" spellcheck="false"></textarea>
-              <div class="hint">Paste the full manifest (groups + normalization), or leave blank to load <code>groups_manifest.json</code> from your model repo. A bare <code>[0,1,2,3]</code> is rejected: it is ambiguous and used to include background 0.</div></div>
-          </div>
+          <div class="hint">Leave blank unless your model repo does not include a manifest.</div>
         </div>
-      </section>
+      </div>
+    </details>
 
-      <section class="step glass">
-        <h3><span class="num">4</span>Reconstruction</h3>
-        <p class="lead">Mesh extraction and publishing options.</p>
-        <div class="row three">
-          <div><label for="fg_threshold">Foreground threshold</label><input id="fg_threshold" type="number" step="0.05" placeholder="0.40" /></div>
-          <div><label for="max_voxels">Max voxels</label><input id="max_voxels" type="number" placeholder="600000000" /></div>
-          <div><label for="names">Names JSON (optional)</label><input id="names" placeholder='{"17": "Heart"}' spellcheck="false" /></div>
-        </div>
-        <label class="sw" for="disable_tta"><input type="checkbox" id="disable_tta" checked /><span class="tr"></span>disable TTA (4–8× faster; untick for the final high-quality run)</label>
-        <label class="sw" for="push_to_hf"><input type="checkbox" id="push_to_hf" checked /><span class="tr"></span>publish the bundle to Hugging Face</label>
-      </section>
-
-      <section class="step glass">
-        <h3><span class="num">5</span>Execution</h3>
-        <p class="lead">Where the notebooks run.</p>
-        <div class="row three">
-          <div><label for="engine">Engine</label>
-            <select id="engine"><option value="kaggle">kaggle — push each notebook as a GPU kernel</option></select></div>
-          <div><label for="timeout_s">Kernel timeout (s)</label><input id="timeout_s" type="number" value="21600" /></div>
-          <div><label for="run_id">Run ID (optional, for resume)</label><input id="run_id" placeholder="run-1a2b3c4d" spellcheck="false" /></div>
-        </div>
-        <label class="sw" for="kaggle_gpu"><input type="checkbox" id="kaggle_gpu" checked /><span class="tr"></span>request GPU</label>
-        <label class="sw" for="kaggle_internet"><input type="checkbox" id="kaggle_internet" checked /><span class="tr"></span>allow internet (needed to reach Hugging Face)</label>
-      </section>
-
-      <details class="adv glass">
-        <summary>Advanced — raw run spec<small>optional</small><svg class="i chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></summary>
-        <div class="in">
-          <label for="yaml">When non-empty this YAML replaces the whole form (see <code>specs/*.yaml</code>)</label>
-          <textarea id="yaml" spellcheck="false" placeholder="title: My run&#10;specimen:&#10;  id: CS12-8505A&#10;  stage: CS12&#10;  atlas_specimen_id: '8505A'&#10;models:&#10;  source: custom&#10;  model_repo: my-user/atlas-cs12"></textarea>
-        </div>
-      </details>
+    <div class="actions">
+      <button type="button" class="btn" id="planBtn">Preview</button>
+      <button type="button" class="btn primary" id="runBtn"><svg class="i" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg>Run</button>
     </div>
+    <div class="msgs" id="msgs"></div>
+  </form>
 
-    <div class="actionbar glass">
-      <button class="btn" id="planBtn"><svg class="i" viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h9"/></svg>Plan</button>
-      <button class="btn" id="dryBtn">Dry run (prepare only)</button>
-      <div class="spacer"></div>
-      <button class="btn" id="resumeBtn" title="Restart the selected run and skip completed stages"><svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.7-6M20 4v4.5h-4.5"/></svg>Run with resume</button>
-      <button class="btn primary" id="runBtn"><svg class="i" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg>Run</button>
-      <div class="msgs" id="msgs"></div>
+  <section class="card status hidden" id="statusCard" aria-live="polite">
+    <div class="statusHead">
+      <span class="dot" id="statusDot"></span>
+      <b id="statusTitle">Preview</b>
+      <div class="state" id="stateChips"></div>
     </div>
-    <div class="hidden" id="formErr"></div>
-  </div>
+    <div class="prog hidden" id="prog"><div class="bar"><i id="progFill"></i></div><div class="t"><span id="progTxt"></span><span id="progPct"></span></div></div>
+    <ul class="stages" id="stages"></ul>
+    <a class="openbtn hidden" id="viewerLink2" href="#">Open the 3D model <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    <div class="runerr" id="runErr"></div>
+    <div class="files" id="runFiles"></div>
 
-  <!-- ============================== STATUS ============================== -->
-  <aside class="col-r">
-    <div class="panel glass">
-      <h2>Run status</h2>
-      <div class="state" id="stateChips"><span class="chip">no run yet</span></div>
-      <div class="prog hidden" id="prog"><div class="bar"><i id="progFill"></i></div><div class="t"><span id="progTxt"></span><span id="progPct"></span></div></div>
-      <ul class="stages" id="stages"><li class="empty">Press <b style="font-weight:400">Plan</b> to preview the notebooks that will run.</li></ul>
-      <a class="openbtn hidden" id="viewerLink2" href="#">Open the 3D model <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-      <div class="runerr" id="runErr"></div>
-      <div class="files" id="runFiles"></div>
-    </div>
+    <details class="more">
+      <summary>Spec</summary>
+      <div class="body"><button type="button" class="mini" data-copy="yamlOut">Copy</button><pre class="yaml" id="yamlOut">(press Preview)</pre></div>
+    </details>
+    <details class="more" id="logWrap">
+      <summary>Log</summary>
+      <div class="body"><button type="button" class="mini" data-copy="logOut">Copy</button><pre class="log" id="logOut">(no run yet)</pre></div>
+    </details>
+  </section>
 
-    <div class="panel glass">
-      <h2>Plan / spec<span class="tools"><button class="mini" data-copy="yamlOut">Copy</button></span></h2>
-      <p style="margin:4px 0 0;font-size:12.5px;color:var(--dim)">The exact YAML that will be saved next to the executed notebooks.</p>
-      <pre class="yaml" id="yamlOut">(press Plan)</pre>
-    </div>
-
-    <div class="panel glass">
-      <h2>Run log<span class="tools"><button class="mini" data-copy="logOut">Copy</button></span></h2>
-      <p style="margin:4px 0 0;font-size:12.5px;color:var(--dim)">Tail of <code>runs/&lt;run_id&gt;/run.log</code></p>
-      <pre class="log" id="logOut">(no run yet)</pre>
-    </div>
-
-    <div class="panel glass">
-      <h2>History</h2>
-      <ul class="hist" id="hist"><li class="empty">no runs yet</li></ul>
-    </div>
-  </aside>
+  <details class="card history hidden" id="historyCard">
+    <summary>Recent runs</summary>
+    <ul class="hist" id="hist"><li class="empty">No runs yet</li></ul>
+  </details>
 </main>
 
 <div class="toast" id="toast"></div>
 
 <script>
 const $ = (id) => document.getElementById(id);
-const el = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-let currentRun = null, timer = null;
+let currentRun = null, timer = null, pollStopped = false;
+let activeCase = "same";
+let inputFormat = "atlas";
+let lastErrs = [];
 
 let toastT;
-function toast(t) { const n = $("toast"); n.textContent = t; n.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => n.classList.remove("show"), 1600); }
+function toast(t) { const n = $("toast"); n.textContent = t; n.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => n.classList.remove("show"), 1700); }
 
 /* ---------------- cases ---------------- */
-const CASES = {
-  same: {
-    specimen_id: "CS17-6521", stage: "CS17", atlas_specimen_id: "6521",
-    description: "Carnegie Stage 17, specimen 6521",
-    input_format: "atlas_am_volume", input_needed: "auto", model_source: "pretrained",
-    model_configuration: "2d", model_fold: 0, model_repo: "", groups_json: "",
-    atlas_grey_tif_url: "", raw_url: "", raw_xy_um: "", raw_z_um: "", engine: "kaggle"
-  },
-  other: {
-    specimen_id: "", stage: "", atlas_specimen_id: "",
-    description: "",
-    input_format: "atlas_am_volume", input_needed: "true", model_source: "custom",
-    model_configuration: "2d", model_fold: 0, model_repo: "", groups_json: "",
-    atlas_grey_tif_url: "", raw_url: "", raw_xy_um: "", raw_z_um: "", engine: "kaggle"
-  },
-  upload: {
-    specimen_id: "", stage: "", atlas_specimen_id: "",
-    description: "",
-    input_format: "raw_section_archive", input_needed: "true", model_source: "custom",
-    model_configuration: "2d", model_fold: 0, model_repo: "", groups_json: "",
-    atlas_grey_tif_url: "", raw_url: "", raw_xy_um: "", raw_z_um: "", engine: "kaggle"
-  }
+const CASE_DEFAULTS = {
+  same: { id: "CS17-6521", fmt: "atlas", custom: false,
+    hint: "CS17-6521 with the project models. Add new sections of the same specimen if needed." },
+  other: { id: "", fmt: "atlas", custom: true,
+    hint: "Another specimen or any sections, segmented with your own nnU-Net model." },
+  upload: { id: "", fmt: "raw", custom: true,
+    hint: "Upload sections with their physical scale; your model does the segmentation." }
 };
+const RAW_LABEL = { same: "New sections", other: "Any sections", upload: "Sections" };
+
 document.querySelectorAll(".case").forEach(b => b.addEventListener("click", () => {
-  document.querySelectorAll(".case").forEach(x => { x.classList.remove("on"); x.setAttribute("aria-selected", "false"); });
-  b.classList.add("on"); b.setAttribute("aria-selected", "true");
+  activeCase = b.dataset.case;
+  const def = CASE_DEFAULTS[activeCase];
+  document.querySelectorAll(".case").forEach(x => {
+    const on = x === b;
+    x.classList.toggle("on", on);
+    x.setAttribute("aria-selected", on ? "true" : "false");
+  });
+  $("caseHint").textContent = def.hint;
+  if (def.id) $("specimen_id").value = def.id;
+  else if ($("specimen_id").value.trim() === "CS17-6521") $("specimen_id").value = "";
+  inputFormat = def.fmt;
   $("raw_file").value = "";
-  Object.entries(CASES[b.dataset.case]).forEach(([k, v]) => { const node = $(k); if (node && node.type !== "checkbox") node.value = v; });
-  syncUI();
+  $("fileName").textContent = "or drop it here";
+  $("modelBox").classList.toggle("hidden", !def.custom);
+  $("manifestWrap").classList.toggle("hidden", !def.custom);
+  $("idHint").innerHTML = def.custom
+    ? "Used for the folder name. Any unique ID works; Atlas IDs look like <code>CS12-8505A</code>."
+    : "Used for the folder name. Atlas IDs look like <code>CS17-6521</code>.";
+  syncInput();
 }));
 
-function syncUI() {
-  const fmt = $("input_format").value, src = $("model_source").value;
-  ["rawRow", "rawRow2"].forEach(id => $(id).classList.toggle("hidden", fmt !== "raw_section_archive"));
-  $("atlasRow").classList.toggle("hidden", fmt !== "atlas_am_volume");
-  $("customBox").classList.toggle("hidden", src !== "custom");
-  if (src === "pretrained") { $("model_configuration").value = "2d"; $("model_fold").value = "0"; }
-  updateWarns();
-}
-["input_format", "input_needed", "model_source", "model_configuration", "engine", "hf_repo", "disable_tta", "kaggle_gpu", "kaggle_internet"].forEach(id => $(id).addEventListener("change", syncUI));
-["hf_repo", "raw_url"].forEach(id => $(id).addEventListener("input", syncUI));
-$("raw_file").addEventListener("change", syncUI);
+document.querySelectorAll("#inputChoice button").forEach(b => b.addEventListener("click", () => {
+  inputFormat = b.dataset.fmt;
+  syncInput();
+}));
 
-/* ---------------- validation + advisories ---------------- */
-const ICON_ERR = '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v5M12 16v.1"/></svg>';
-const ICON_WARN = '<svg class="i" viewBox="0 0 24 24"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17.2v.1"/></svg>';
-let lastErrs = [];
+function syncInput() {
+  const raw = inputFormat === "raw";
+  document.querySelectorAll("#inputChoice button").forEach(x => x.classList.toggle("on", x.dataset.fmt === inputFormat));
+  $("inputChoice").querySelector('[data-fmt="raw"]').textContent = RAW_LABEL[activeCase] || "Sections";
+  $("atlasBox").classList.toggle("hidden", raw);
+  $("rawBox").classList.toggle("hidden", !raw);
+  $("inputChoice").classList.toggle("hidden", activeCase === "upload");
+  $("inputHead").querySelector("span").classList.remove("hidden");
+  $("inputHead").style.justifyContent = "space-between";
+}
+
+/* ---------------- validation + messages ---------------- */
+let lastWarns = [];
 function renderMsgs() {
-  const w = computeWarns();
-  $("msgs").innerHTML = lastErrs.map(m => `<div class="msg err">${ICON_ERR}<span>${esc(m)}</span></div>`).join("") +
-    w.map(m => `<div class="msg warn">${ICON_WARN}<span>${m}</span></div>`).join("");
+  $("msgs").innerHTML = lastErrs.map(m => `<div class="msg err">${esc(m)}</div>`).join("") +
+    lastWarns.map(m => `<div class="msg warn">${m}</div>`).join("");
 }
 function computeWarns() {
-  if ($("yaml").value.trim()) return ["A raw spec is set under <b>Advanced</b> — it replaces the whole form."];
-  const w = [], src = $("model_source").value;
-  if ($("hf_repo").value.trim() === "senku111/embryo-3d") w.push("The default dataset belongs to the original project — make sure your Hugging Face token can write to it, or point to your own.");
-  if ($("input_format").value === "raw_section_archive" && $("raw_file").files.length) w.push("The archive is uploaded to Hugging Face when you press <b>Plan</b> or <b>Run</b>.");
-  if ($("input_format").value === "raw_section_archive" && $("input_needed").value === "auto") w.push("With <b>auto</b>, registration is skipped when this ID already has a volume. For new sections of an existing case, choose <b>always</b>.");
-  if ($("input_format").value === "raw_section_archive" && $("raw_url").value.trim().includes("huggingface.co")) w.push("A Hugging Face link is read with the server's token, so private datasets work; a plain HTTPS link must be public.");
-  if ($("engine").value === "kaggle" && !$("kaggle_internet").checked) w.push("Kaggle internet is off — the kernels cannot reach Hugging Face.");
-  if ($("engine").value === "kaggle" && !$("kaggle_gpu").checked) w.push("GPU is off — segmentation will be extremely slow.");
-  if (src === "custom" && $("model_configuration").value !== "2d") w.push("Use the same nnU-Net configuration and fold as the checkpoint you trained.");
-  if (!$("disable_tta").checked) w.push("TTA enabled: 4–8× slower inference (best quality for the final run).");
+  const w = [];
+  if (inputFormat === "raw" && $("raw_file").files.length) {
+    w.push("The archive is uploaded to Hugging Face when you press Preview or Run.");
+  }
   return w;
 }
-function updateWarns() { renderMsgs(); }
+function updateWarns() { lastWarns = computeWarns(); renderMsgs(); }
 function validate() {
   document.querySelectorAll(".bad").forEach(n => n.classList.remove("bad"));
   const errs = [];
-  if ($("yaml").value.trim()) { lastErrs = errs; renderMsgs(); return errs; }
-  const need = (id, msg) => { if (!$(id).value.trim()) { $(id).classList.add("bad"); errs.push(msg); } };
-  need("specimen_id", "Specimen ID is required.");
-  if ($("specimen_id").value.trim() && /[\s/\\]/.test($("specimen_id").value.trim())) { $("specimen_id").classList.add("bad"); errs.push("Specimen ID cannot contain spaces or slashes (it becomes a folder name)."); }
-  if ($("input_format").value === "raw_section_archive") {
+  const id = $("specimen_id").value.trim();
+  if (!id) { $("specimen_id").classList.add("bad"); errs.push("Specimen ID is required."); }
+  else if (!/^[A-Za-z0-9._-]+$/.test(id)) { $("specimen_id").classList.add("bad"); errs.push("Specimen ID cannot contain spaces or slashes."); }
+
+  if (inputFormat === "atlas" && id && !/^CS\d+-[A-Za-z0-9._-]+$/.test(id)) {
+    $("specimen_id").classList.add("bad");
+    errs.push("Use the Atlas ID, for example CS12-8505A.");
+  }
+
+  if (inputFormat === "raw") {
     const hasFile = $("raw_file").files.length > 0;
-    if (!hasFile) need("raw_url", "Give an archive URL / Hugging Face dataset link, or choose a ZIP/TAR to upload.");
-    need("raw_xy_um", "XY pixel size (µm) is required for raw sections.");
-    need("raw_z_um", "Section spacing (µm) is required for raw sections.");
-    if (hasFile && $("raw_file").files[0].size > 2 * 1024 * 1024 * 1024) {
-      errs.push("That archive is larger than 2 GB — use a Hugging Face dataset link instead.");
-    }
+    const url = $("raw_url").value.trim();
+    if (!hasFile && !url) { $("raw_url").classList.add("bad"); errs.push("Add a section archive or a link."); }
+    if (hasFile && $("raw_file").files[0].size > 2 * 1024 * 1024 * 1024) errs.push("Use a Hugging Face dataset link for archives over 2 GB.");
+    const xy = num("raw_xy_um"), z = num("raw_z_um");
+    if (!xy || xy <= 0) { $("raw_xy_um").classList.add("bad"); errs.push("XY pixel size is required."); }
+    if (!z || z <= 0) { $("raw_z_um").classList.add("bad"); errs.push("Section spacing is required."); }
   }
-  if ($("input_format").value === "atlas_am_volume" && !$("atlas_grey_tif_url").value.trim()) {
-    need("atlas_specimen_id", "Atlas specimen code is required (or give the grey .tif URL).");
+
+  if (activeCase !== "same" && !$("model_repo").value.trim()) {
+    $("model_repo").classList.add("bad");
+    errs.push("Your nnU-Net model repo is required.");
   }
-  if ($("model_source").value === "custom") need("model_repo", "Your nnU-Net model repo is required for a researcher-supplied model.");
-  lastErrs = errs; renderMsgs();
-  if (errs.length) { const f = document.querySelector(".bad"); if (f) { f.scrollIntoView({ block: "center", behavior: "smooth" }); f.focus({ preventScroll: true }); } }
+
+  lastErrs = errs;
+  updateWarns();
+  if (errs.length) {
+    const f = document.querySelector(".bad");
+    if (f) { f.scrollIntoView({ block: "center", behavior: "smooth" }); f.focus({ preventScroll: true }); }
+  }
   return errs;
 }
-document.querySelectorAll("input,select,textarea").forEach(n => n.addEventListener("input", () => n.classList.remove("bad")));
-$("yaml").addEventListener("input", updateWarns);
+document.querySelectorAll("input,select").forEach(n => n.addEventListener("input", () => n.classList.remove("bad")));
 
-/* ---------------- form -> payload ---------------- */
-function num(id) { const v = $(id).value.trim(); if (v === "") return null; const n = Number(v); return Number.isNaN(n) ? null : n; }
-function chk(id) { return $(id).checked; }
+/* ---------------- payload ---------------- */
+function num(id) { const el = $(id); if (!el) return null; const v = el.value.trim(); if (v === "") return null; const n = Number(v); return Number.isNaN(n) ? null : n; }
+function chk(id) { const el = $(id); return !!(el && el.checked); }
 function payload(extra = {}) {
-  const p = {
-    title: $("description").value || $("specimen_id").value,
-    specimen_id: $("specimen_id").value.trim(),
-    stage: $("stage").value.trim() || "CS17",
-    atlas_specimen_id: $("atlas_specimen_id").value.trim(),
-    description: $("description").value.trim(),
-    input_format: $("input_format").value,
-    input_needed: $("input_needed").value,
-    atlas_grey_tif_url: $("atlas_grey_tif_url").value.trim(),
-    raw_mode: $("raw_mode").value,
+  const id = $("specimen_id").value.trim();
+  return Object.assign({
+    title: id,
+    specimen_id: id,
+    stage: "",
+    atlas_specimen_id: "",
+    description: "",
+    input_format: inputFormat === "raw" ? "raw_section_archive" : "atlas_am_volume",
+    input_needed: inputFormat === "raw" ? "true" : "auto",
+    atlas_grey_tif_url: "",
+    raw_mode: "url",
     raw_url: $("raw_url").value.trim(),
-    raw_xy_um: num("raw_xy_um"), raw_z_um: num("raw_z_um"),
-    registration_mode: $("registration_mode").value,
-    hf_repo: $("hf_repo").value.trim(),
+    raw_xy_um: num("raw_xy_um"),
+    raw_z_um: num("raw_z_um"),
+    registration_mode: "always",
+    hf_repo: $("hf_repo").value.trim() || "senku111/embryo-3d",
     hf_private: chk("hf_private"),
-    model_source: $("model_source").value,
+    model_source: activeCase === "same" ? "pretrained" : "custom",
     model_repo: $("model_repo").value.trim(),
     groups_manifest_in_repo: $("groups_manifest_in_repo").value.trim(),
-    groups_json: $("groups_json").value.trim(),
-    norm_lo: num("norm_lo"), norm_hi: num("norm_hi"),
+    groups_json: "",
+    norm_lo: num("norm_lo"),
+    norm_hi: num("norm_hi"),
     model_configuration: $("model_configuration").value,
     model_fold: num("model_fold") ?? 0,
-    push_to_hf: chk("push_to_hf"),
-    fg_threshold: num("fg_threshold"), max_voxels: num("max_voxels"),
-    names: $("names").value.trim(),
-    engine: $("engine").value,
-    kaggle_gpu: chk("kaggle_gpu"),
-    kaggle_internet: chk("kaggle_internet"),
-    timeout_s: num("timeout_s") ?? 21600,
-    yaml: $("yaml").value.trim() || null
-  };
-  if (chk("disable_tta")) p.disable_tta = true;
-  return Object.assign(p, extra);
+    push_to_hf: true,
+    fg_threshold: null,
+    disable_tta: true,
+    max_voxels: null,
+    names: "",
+    engine: "kaggle",
+    kaggle_gpu: true,
+    kaggle_internet: true,
+    timeout_s: 21600,
+    yaml: null,
+    run_id: ""
+  }, extra);
 }
-function showErr(msg) {
-  lastErrs = msg ? [msg] : [];
-  renderMsgs();
-}
+function showErr(msg) { lastErrs = msg ? [msg] : []; updateWarns(); }
 
 async function api(path, opts) {
   const r = await fetch(path, Object.assign({ headers: { "Content-Type": "application/json" } }, opts));
@@ -579,7 +492,7 @@ async function api(path, opts) {
 /* ---------------- upload ---------------- */
 async function ensureUploaded() {
   const file = $("raw_file").files[0];
-  if ($("input_format").value !== "raw_section_archive" || !file) return true;
+  if (inputFormat !== "raw" || !file) return true;
   toast("Uploading archive…");
   const fd = new FormData();
   fd.append("file", file);
@@ -590,6 +503,7 @@ async function ensureUploaded() {
     if (!r.ok) throw new Error(body.detail || `HTTP ${r.status}`);
     $("raw_url").value = body.url;
     $("raw_file").value = "";
+    $("fileName").textContent = "or drop it here";
     toast("Archive uploaded");
     return true;
   } catch (e) {
@@ -598,57 +512,82 @@ async function ensureUploaded() {
   }
 }
 
-/* ---------------- plan ---------------- */
+$("raw_file").addEventListener("change", () => {
+  const f = $("raw_file").files[0];
+  $("fileName").textContent = f ? `${f.name} · ${(f.size / 1048576).toFixed(1)} MB` : "or drop it here";
+  updateWarns();
+});
+const drop = $("dropZone");
+["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", (e) => {
+  if (e.dataTransfer.files.length) {
+    $("raw_file").files = e.dataTransfer.files;
+    $("raw_file").dispatchEvent(new Event("change"));
+  }
+});
+
+/* ---------------- status ---------------- */
+function showStatus() {
+  $("statusCard").classList.remove("hidden");
+  $("statusCard").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+function renderPlan(res) {
+  showStatus();
+  $("statusTitle").textContent = "Preview";
+  $("statusDot").className = "dot ok";
+  $("stateChips").innerHTML = `<span class="chip">${esc(res.specimen_id || "")}</span><span class="chip">${res.stages.length} stages</span>`;
+  $("prog").classList.add("hidden");
+  $("stages").innerHTML = res.stages.map(s =>
+    `<li><span class="dot"></span><span><b>${esc(s.name)}</b>${s.label ? " — " + esc(s.label) : ""}<em>${esc(s.notebook)}</em></span></li>`
+  ).join("");
+  $("yamlOut").textContent = YAML(res.spec);
+  $("logOut").textContent = "(no run yet)";
+  $("viewerLink2").classList.add("hidden");
+  $("runErr").textContent = "";
+  $("runFiles").textContent = "";
+}
+
 $("planBtn").addEventListener("click", async () => {
   if (validate().length) return;
   $("planBtn").disabled = true;
   try {
-    if (!(await ensureUploaded())) { $("planBtn").disabled = false; return; }
+    if (!(await ensureUploaded())) return;
     const res = await api("/api/plan", { method: "POST", body: JSON.stringify(payload()) });
-    $("yamlOut").textContent = YAML(res.spec);
-    $("stages").innerHTML = "";
-    res.stages.forEach(s => {
-      const li = el("li", "", `<span class="dot"></span><span><b>${esc(s.name)}</b>${s.gpu ? '<span class="gpu">GPU</span>' : ""}${s.label ? " — " + esc(s.label) : ""}<em>${esc(s.notebook)}</em></span>`);
-      $("stages").appendChild(li);
-    });
-    $("prog").classList.add("hidden");
-    toast("Plan ready");
+    renderPlan(res);
+    toast("Preview ready");
   } catch (e) { showErr(e.message); }
-  $("planBtn").disabled = false;
+  finally { $("planBtn").disabled = false; }
 });
 
 /* ---------------- run ---------------- */
-async function startRun(extra) {
+async function startRun() {
   if (validate().length) return;
   $("runErr").textContent = "";
+  $("runBtn").disabled = true;
   try {
     if (!(await ensureUploaded())) return;
-    const res = await api("/api/runs", { method: "POST", body: JSON.stringify(payload(extra)) });
+    const res = await api("/api/runs", { method: "POST", body: JSON.stringify(payload()) });
     currentRun = res.run_id;
-    if (!$("run_id").value.trim()) $("run_id").value = currentRun;
     timer = null;
+    pollStopped = false;
+    showStatus();
     poll();
     refreshHistory();
-    toast(extra && extra.dry_run ? "Dry run started" : "Run started");
+    toast("Run started");
   } catch (e) { showErr(e.message); }
+  finally { $("runBtn").disabled = false; }
 }
-$("runBtn").addEventListener("click", () => startRun({}));
-$("dryBtn").addEventListener("click", () => startRun({ dry_run: true }));
-$("resumeBtn").addEventListener("click", () => {
-  const rid = $("run_id").value.trim() || currentRun;
-  if (!rid) { showErr("Paste the run id you want to resume (or run once first)."); return; }
-  startRun({ run_id: rid });
-});
 
 const STATUS_DOT = { done: "done", failed: "fail", running: "run", skipped: "skip", pending: "" };
 function renderRun(data) {
   const st = data.state || {};
+  $("statusCard").classList.remove("hidden");
+  $("statusTitle").textContent = st.status === "done" ? "Finished" : st.status === "failed" ? "Failed" : "Running";
+  $("statusDot").className = "dot " + (st.status === "done" ? "ok" : st.status === "failed" ? "bad" : "run");
   $("stateChips").innerHTML = [
     `<span class="chip">run <b>${esc(st.run_id || currentRun)}</b></span>`,
-    `<span class="chip ${esc(st.status || "")}">status <b>${esc(st.status || "…")}</b></span>`,
-    st.specimen_id ? `<span class="chip">specimen <b>${esc(st.specimen_id)}</b></span>` : "",
-    st.engine ? `<span class="chip">engine <b>${esc(st.engine)}</b></span>` : "",
-    st.error ? `<span class="chip failed" title="${esc(st.error)}">error <b>${esc(st.error)}</b></span>` : ""
+    st.specimen_id ? `<span class="chip">${esc(st.specimen_id)}</span>` : ""
   ].join("");
   $("runErr").textContent = st.error || "";
   const stages = st.stages || {};
@@ -657,7 +596,8 @@ function renderRun(data) {
     $("stages").innerHTML = entries.map(([name, s]) =>
       `<li class="${s.status === "running" ? "cur" : ""} ${s.status === "failed" ? "err" : ""}"><span class="dot ${STATUS_DOT[s.status] || ""}"></span><span><b>${esc(name)}</b> — ${esc(s.status)}` +
       (s.seconds ? ` · ${Math.round(s.seconds)}s` : "") +
-      (s.error ? `<em>${esc(s.error)}</em>` : "") + (s.kernel ? `<em>${esc(s.kernel)}</em>` : "") + `</span></li>`).join("");
+      (s.error ? `<em>${esc(s.error)}</em>` : "") + (s.kernel ? `<em>${esc(s.kernel)}</em>` : "") + `</span></li>`
+    ).join("");
     const doneN = entries.filter(([, s]) => s.status === "done" || s.status === "skipped").length;
     const pct = Math.round((doneN / entries.length) * 100);
     $("prog").classList.remove("hidden");
@@ -667,73 +607,77 @@ function renderRun(data) {
     $("progPct").textContent = pct + "%";
   }
   if (data.log) {
-    const lg = $("logOut"); const near = lg.scrollHeight - lg.scrollTop - lg.clientHeight < 40;
-    lg.textContent = data.log; if (near) lg.scrollTop = lg.scrollHeight;
+    const lg = $("logOut");
+    const near = lg.scrollHeight - lg.scrollTop - lg.clientHeight < 40;
+    lg.textContent = data.log;
+    if (near) lg.scrollTop = lg.scrollHeight;
   }
   const done = st.status === "done";
   const v = data.viewer || (done && st.specimen_id ? { specimen: st.specimen_id, url: `/viewer/?specimen=${st.specimen_id}` } : null);
   $("viewerLink2").classList.toggle("hidden", !v);
   if (v) $("viewerLink2").href = v.url;
   $("runFiles").textContent = done
-    ? `Artifacts: viewers/${st.specimen_id}/ · slices/${st.specimen_id}/ · volumes/${st.specimen_id}/ → ${$("hf_repo").value}`
+    ? `viewers/${st.specimen_id}/ · volumes/${st.specimen_id}/ · slices/${st.specimen_id}/ → ${$("hf_repo").value}`
     : "";
   return st.status;
 }
 async function poll() {
-  if (!currentRun) return;
+  if (!currentRun || pollStopped) return;
   try {
     const data = await api(`/api/runs/${currentRun}`);
     const status = renderRun(data);
-    if (["done", "failed"].includes(status)) { clearInterval(timer); timer = null; refreshHistory(); return; }
+    if (["done", "failed"].includes(status)) { pollStopped = true; clearInterval(timer); timer = null; refreshHistory(); return; }
   } catch (e) { $("runErr").textContent = e.message; }
   if (!timer) timer = setInterval(poll, 3000);
 }
-setInterval(() => { if (currentRun && !timer) poll(); }, 3000);
+setInterval(() => { if (currentRun && !timer && !pollStopped) poll(); }, 3000);
 
 async function refreshHistory() {
   try {
     const data = await api("/api/runs");
-    if (!data.runs.length) return;
+    if (!data.runs.length) { $("historyCard").classList.add("hidden"); return; }
+    $("historyCard").classList.remove("hidden");
     $("hist").innerHTML = data.runs.map(r =>
       `<li data-run="${esc(r.run_id)}" class="${r.run_id === currentRun ? "on" : ""}"><span class="meta"><span class="nm">${esc(r.specimen_id || "")}${r.title ? " · " + esc(r.title) : ""}</span><span class="id">${esc(r.run_id)}</span></span>` +
-      `<span class="st ${esc(r.status)}"><span class="dot"></span>${esc(r.status)}</span></li>`).join("");
+      `<span class="st ${esc(r.status)}"><span class="dot"></span>${esc(r.status)}</span></li>`
+    ).join("");
     $("hist").querySelectorAll("li[data-run]").forEach(li => li.addEventListener("click", async () => {
-      currentRun = li.dataset.run; $("run_id").value = currentRun; timer = null;
+      currentRun = li.dataset.run;
+      timer = null;
+      pollStopped = false;
       $("hist").querySelectorAll("li").forEach(x => x.classList.toggle("on", x === li));
       await poll();
     }));
   } catch {}
 }
 
-/* ---------------- copy buttons ---------------- */
+/* ---------------- copy ---------------- */
 document.querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", () => {
   navigator.clipboard?.writeText($(b.dataset.copy).textContent).then(() => toast("Copied"), () => toast("Copy failed"));
 }));
 
-/* ---------------- health + specimens ---------------- */
+/* ---------------- init ---------------- */
 (async function init() {
-  syncUI();
+  syncInput();
+  updateWarns();
   try {
     const h = await api("/api/health");
-    if (h.ok) { $("healthDot").className = "dot ok"; $("health").textContent = "credentials ready"; }
-    else { $("healthDot").className = "dot warn"; $("health").textContent = "missing: " + Object.entries(h.creds).filter(([, v]) => v !== true).map(([k]) => k).join(", "); }
-  } catch (e) { $("healthDot").className = "dot bad"; $("health").textContent = "health check failed"; }
-  try {
-    const s = await api("/api/specimens");
-    if (s.specimens.length) $("viewerLabel").textContent = `3D viewer · ${s.specimens.length} specimen${s.specimens.length === 1 ? "" : "s"}`;
-    window.__specimens = s.specimens;
-    const sel = $("specOpen");
-    s.specimens.forEach(x => {
-      const o = document.createElement("option");
-      o.value = x.id; o.textContent = x.description || x.id;
-      sel.appendChild(o);
-    });
-    sel.addEventListener("change", () => { if (sel.value) location.href = `/viewer/?specimen=${encodeURIComponent(sel.value)}`; });
-  } catch {}
+    if (h.ok) {
+      $("healthDot").className = "dot ok";
+      $("health").textContent = "Ready";
+    } else {
+      $("healthDot").className = "dot warn";
+      $("health").textContent = "Setup needed";
+      $("healthPill").title = "Missing: " + Object.entries(h.creds).filter(([, v]) => v !== true).map(([k]) => k).join(", ");
+    }
+  } catch (e) {
+    $("healthDot").className = "dot bad";
+    $("health").textContent = "Offline";
+  }
   refreshHistory();
 })();
 
-/* ---------------- tiny YAML writer (for the plan preview) ---------------- */
+/* ---------------- tiny YAML writer ---------------- */
 function YAML(v, ind = 0) {
   const pad = " ".repeat(ind);
   if (v === null || v === undefined) return "null";
