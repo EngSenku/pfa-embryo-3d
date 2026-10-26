@@ -2,6 +2,7 @@
 # Heavy scientific packages are installed by the notebooks themselves on the
 # Kaggle side (they bootstrap their own venv), so the image stays small.
 fastapi>=0.110
+python-multipart>=0.0.9
 uvicorn[standard]>=0.27
 pydantic>=2.6
 PyYAML>=6.0

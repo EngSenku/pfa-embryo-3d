@@ -18,45 +18,156 @@ Register a specimen, segment it with nnU-Net group models, and rebuild an
 explorable 3D anatomical model: `volumes/<id>/`, `slices/<id>/` and
 `viewers/<id>/` on Hugging Face, read by the web viewer.
 
-Everything a researcher has to fill in is a **run spec**. The form on this Space,
-the CLI (`run_pipeline.py`) and the notebooks all consume the same spec, so any
-run can be replayed exactly.
+Everything a researcher has to fill in is a **run spec**. The form on the web
+app, the CLI (`run_pipeline.py`) and the notebooks all consume the same spec, so
+any run can be replayed exactly.
 
-> `report_pfa.pdf` is the original project report and is being rewritten to
-> match this workflow.
+The LaTeX report and its compiled PDF are in [`report_pfa/`](report_pfa/);
+[`HF_REPOS.md`](HF_REPOS.md) lists every Hugging Face repository and whether the
+deployment still needs it.
 
 ---
 
-## Which case are you in?
+## The three deployment cases
 
-| Case | Specimen | Segmentation models | Spec |
+The web form exposes exactly three cases. Training is **not** offered from the
+form: the training notebooks remain in the repository for the report and for
+reproducing the project models, but a researcher who needs a new model trains it
+in their own Kaggle/HF workspace and supplies the resulting model repo.
+
+| Case | Specimen / input | Segmentation model | What the researcher supplies |
 | --- | --- | --- | --- |
-| **1. Reproduce the project** | CS17 atlas specimen `6521` | the pretrained CS17 4-group models | [`specs/cs17_atlas.yaml`](specs/cs17_atlas.yaml) |
-| **2. New stage, you already have a model** | your specimen id + Atlas code | your nnU-Net v2 checkpoints in an HF **model** repo | [`specs/new_stage_custom_model.yaml`](specs/new_stage_custom_model.yaml) |
-| **3. New stage, nothing trained yet** | your specimen id + Atlas code | trained first from Atlas labels: data-prep → N× training → reconstruction | [`specs/new_stage_train_from_labels.yaml`](specs/new_stage_train_from_labels.yaml) |
+| **1. Same specimen, project model** | `CS17-6521` (Atlas `.tif + .am`, or new sections of the same case) | the project's CS17 4-group models | nothing (the project repos are the default) |
+| **2. Other specimen or any slices** | another specimen / Atlas code, **or any section archive** (including non-embryo images) | a researcher-supplied nnU-Net v2 model | HF model repo + groups manifest + `configuration` + `fold` |
+| **3. Upload sections** | a ZIP/TAR/RAR or Hugging Face dataset link, plus XY µm/px and Z µm/section | a researcher-supplied nnU-Net v2 model | the archive and the physical scale, plus the same model information as case 2 |
 
-Sub-cases:
+Case 3 is the upload shortcut of case 2: it always uses
+`input.format: raw_section_archive`. Case 2 can use either an Atlas volume or the
+same raw-archive path.
 
-* **Raw serial sections instead of an Atlas volume** — `input.format: raw_section_archive`
-  (+ `xy_pixel_size_um` / `z_spacing_um`, both mandatory).
-* **Your own nnU-Net raw dataset instead of Atlas labels** —
-  `models.source: train` with `models.dataset_source: nnunet_raw` plus
-  `models.groups` and `models.norm`.
-* **Private specimen** — `input.hf_private: true` and point `input.hf_repo`
-  at a private dataset.
+The pipeline does not assume the input is an embryo. It segments whatever
+structures the supplied model predicts; the viewer reads the bundle's structure
+names and colours from `names.json`.
+
+### Labels and groups
+
+A custom model is not required to use the Atlas 4-group layout. The
+reconstruction notebook discovers the group folders and dataset names from the
+manifest and the model repo, so a model can have any number of groups, any
+`Dataset7xx` ids and any voxel size. The one hard constraint is that the model
+must have been trained with the same normalisation range that is recorded in its
+manifest.
+
+Inline `models.groups` must be a full list of group mappings:
+
+```yaml
+models:
+  groups:
+    - group_index: 0
+      dataset_id: 811
+      dataset_name: AtlasCS12Group0
+      atlas_ids: [1, 2, 3]
+  norm:
+    lo: 0
+    hi: 60000
+```
+
+The old shorthand `groups: [0, 1, 2, 3]` is **rejected**: it is ambiguous
+(group indexes? structure ids? labels including background?) and used to map
+background `0` as a structure. If the manifest is already published, set
+`models.groups_manifest_in_repo` instead.
+
+---
+
+## Inputs
+
+### Atlas volume (`.tif` + `.am`)
+
+The registration notebook builds the URL from the Carnegie stage and the Atlas
+specimen code, for example
+`3DAtlas_CS17-6521-grey-v2016-01.tif`. The Atlas used different release
+suffixes across stages, so the notebook probes `v2016-01`, `v2016-02` and
+`v2016-03` against the live server before downloading. An explicit
+`input.atlas_grey_tif_url` / `input.atlas_am_url` overrides the probe.
+
+Tested working with `v2016-01`: `CS17-6521`, `CS12-8505A`, `CS15-3512` and
+`CS09-H712`. The probe remains because the Atlas has changed suffixes between
+releases; `v2016-02`/`v2016-03` return 404 for these four as of October 2026.
+
+### Raw serial sections
+
+* direct ZIP/TAR/RAR URL, or a Hugging Face dataset/file URL (private repos work
+  through the server's `HF_TOKEN`);
+* or upload a ZIP/TAR/RAR in the form. The app streams it to the shared HF
+  dataset with `POST /api/uploads` and puts the resulting HTTPS URL in the spec;
+* **XY pixel size (µm/px)** and **Z section spacing (µm/section) are mandatory**
+  for raw sections. The registration notebook converts them into the volume
+  manifest; without them the viewer cannot report physical units.
+
+`input.raw.mode: local_archive` remains available for the CLI with
+`--engine local`, but the form does not expose it and the Kaggle engine rejects
+it: a Kaggle kernel cannot see this server's disk.
+
+---
+
+## Models
+
+The project models live in:
+
+| Purpose | Default repo |
+| --- | --- |
+| 4-group nnU-Net checkpoints | `senku111/atlas-cs17-4groups-nnunet-training` |
+| canonical training dataset + `all_groups_manifest.json` (case 1) | `senku111/atlas-cs17-4groups-dataset` |
+| shared artifacts (`volumes/`, `slices/`, `viewers/`, run state, uploads) | `senku111/embryo-3d` |
+
+If the training-dataset repo is private or unavailable, case 1 still runs: the
+reconstruction notebook derives the same group layout from the `dataset.json`
+files stored next to the published checkpoints (label names carry the Atlas
+ids), then uses the CS17 normalisation range. This is a read-only fallback; no
+extra upload is required.
+
+The Hugging Face repositories used by the project, the training-only ones and
+the unrelated ones are listed in [`HF_REPOS.md`](HF_REPOS.md), so the account
+owner can remove everything that is not needed.
+
+For a researcher-supplied model, point `models.model_repo` at an HF **model**
+repo that contains the nnU-Net v2 results tree, for example:
+
+```
+group00_<DatasetName>/nnUNet_results/Dataset7xx_<DatasetName>/fold_0/...
+```
+
+and a groups manifest (`groups_manifest.json` /
+`all_groups_manifest.json`). `models.configuration` and `models.fold` must match
+the published checkpoint (they are no longer hardcoded to `2d` and `0`).
 
 ---
 
 ## Use the web form
 
-1. Open the Space → the form.
+1. Open the app → the form.
 2. Pick one of the three cases, fill in the identifiers.
-3. **Plan** shows the exact notebooks and the YAML that will be saved with the run.
+3. **Plan** validates the spec and shows the exact notebooks and YAML.
 4. **Run** (or **Run with resume**) executes it; the status card, log and a link
    to the 3D viewer appear as stages finish.
 
-Everything the form produces is a plain spec — you can paste it into `specs/`
-and run it from a terminal instead.
+The form writes the same YAML as the CLI. Uploaded archives are sent to
+`PFA_UPLOAD_REPO` (defaults to the shared dataset), removed from the web host,
+and referenced by URL.
+
+### Server environment
+
+| Variable | Purpose |
+| --- | --- |
+| `HF_TOKEN` | HF read/write token (also used to read private dataset links) |
+| `KAGGLE_API_TOKEN` | Kaggle access token (`KGAT_...`), or `KAGGLE_USERNAME` + `KAGGLE_KEY` |
+| `PFA_SHARED_REPO` | shared artifacts repo (default `senku111/embryo-3d`) |
+| `PFA_UPLOAD_REPO` | optional separate repo for form uploads |
+| `PFA_MAX_UPLOAD_MB` | upload limit (default 2048 MB) |
+| `PFA_RUNS_DIR` | local scratch/state directory |
+| `PFA_STATE_REPO` | repo for mirrored `runs/<id>/state.json` |
+
+---
 
 ## Use the CLI
 
@@ -90,6 +201,25 @@ run.log          the runner's own log
 
 ---
 
+## Training (report / reproduction only)
+
+Training is not part of the deployment UI. The full training chain is still in
+the repository and in [`specs/new_stage_train_from_labels.yaml`](specs/new_stage_train_from_labels.yaml):
+
+```
+registration
+  → data-preparation            (builds the group datasets from Atlas labels)
+  → train group 0..N
+  → 3d-need-some-work
+```
+
+It is used to reproduce the CS17 project models and to document the method in
+the report. A researcher who wants to train a model for case 2/3 runs this chain
+separately, publishes the checkpoints as an HF model repo, then comes back to
+the deployment form with the model repo.
+
+---
+
 ## What is in the box
 
 | Path | Role |
@@ -102,16 +232,14 @@ run.log          the runner's own log
 | `run_pipeline.py` | CLI |
 | `tools/parameterize_notebooks.py` | (re)applies the parameter cells; `--check` is CI-friendly |
 | `tests/` | parameter-injection and spec/plan tests |
-| `space/` | FastAPI app: form → spec → background run, status API |
+| `space/` | FastAPI app: form → spec → background run, status API, uploads |
 | `index5.html` | the 3D viewer (`?specimen=<id>`, `?repo=<dataset>`) |
 | `backups/original_notebooks/` | untouched copies of the original notebooks |
 
-The pipeline order is
+The deployment pipeline is
 
 ```
 registration (part B; validation part A is pruned)
-  → data-preparation            (only when models.source: train, dataset_source: atlas)
-  → train group 0..N            (only when models.source: train)
   → 3d-need-some-work           (segmentation + meshing + viewer bundle)
 ```
 
@@ -127,14 +255,20 @@ before the next one starts.
 /viewer/?specimen=CS12-8505A&repo=my-user/my-specimens
 ```
 
-The picker in the header lists every specimen with a `viewers/<id>/manifest.json`
-in the shared dataset. Calibration comes from `volumes/<id>/<id>_manifest.json`
+The header picker lists every specimen with a `viewers/<id>/manifest.json` in
+the shared dataset. Calibration comes from `volumes/<id>/<id>_manifest.json`
 (then `slices/<id>/slices_manifest.json`, then `?nz=&ny=&nx=&xy=&z=`).
+The bundle title and `model_configuration` / `model_fold` come from
+`viewers/<id>/manifest.json`.
+
 Optional per-specimen extras next to `manifest.json`:
 
 * `names.json` — structure names / colours / groups (never overwritten by the pipeline)
 * `project.json` — overrides the overview numbers (model groups, held-out dice)
 * `morphometrics.json`, `dice_group{0..3}.json` — extra cards
+
+Project Dice/training numbers are only shown for `CS17-6521` or when a
+`project.json` is present. A researcher bundle does not inherit the CS17 numbers.
 
 ---
 
@@ -145,25 +279,23 @@ python3 tests/test_params.py        # notebooks: cells run together, no stomping
 python3 tests/test_pipeline.py      # specs validate, plans are right, defaults inject cleanly
 ```
 
+The tests do not execute the notebooks; they verify parameter injection, spec
+validation and plan ordering.
+
 ## Deployment
 
 See [DEPLOY.md](DEPLOY.md) for the full setup. In short:
 
-* **Web app** — deploy the free Render web service from the public mirror
-  <https://huggingface.co/datasets/senku111/pfa-source> (Render → New → Web
-  Service → Public Git Repository). No PRO, no card, no GitHub. If you prefer
-  GitHub, the included [`render.yaml`](render.yaml) Blueprint does the same.
-  Set `HF_TOKEN` and `KAGGLE_API_TOKEN`; the free tier sleeps when idle.
+* **Web app** — Docker web service on **Render Free** from the public GitHub
+  repository. Set `HF_TOKEN` and `KAGGLE_API_TOKEN`; the free tier sleeps when
+  idle and has an ephemeral disk.
+* **After each push** — Render public-URL services need
+  **Manual Deploy → Deploy latest commit**; a push alone is not enough.
 * **Storage** — Hugging Face Hub (already wired through `HF_TOKEN`).
 * **Compute** — the researcher's own Kaggle account (GPU quota), via the API.
 
 Run state is mirrored to `runs/<run_id>/` on the Hub, so a free host that sleeps
 resumes unfinished runs instead of losing them.
 
-If the HF account has a PRO plan, the same image also deploys as a Hugging Face
-Docker Space:
-
-```bash
-export HF_TOKEN=hf_...
-tools/deploy_space.sh senku111/pfa-embryo3d     # create the Space + push
-```
+The Hugging Face Space deployment is optional and currently requires a PRO
+account for Docker Spaces.

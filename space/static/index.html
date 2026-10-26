@@ -216,14 +216,14 @@ pre.log{height:300px;color:#aebaa8;white-space:pre-wrap;word-break:break-word}
   <p class="eyebrow">Reconstruction pipeline</p>
   <h1>From serial sections to a <em>publishable 3D atlas</em>.</h1>
   <p>
-    Register the sections, train or reuse the nnU-Net group segmenters, and publish
+    Register the sections, run the nnU-Net group segmenters, and publish
     <code>viewers/&lt;id&gt;/</code> + <code>volumes/&lt;id&gt;/</code> to Hugging Face.
     Notebooks run on <b style="font-weight:400;color:var(--ink)">Kaggle GPUs</b> in your own account; this page only fills in the parameters and watches the run.
   </p>
   <div class="flow" aria-label="Pipeline stages">
     <span class="s"><b>Register</b> sections</span>
     <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    <span class="s"><b>Train</b> / reuse nnU-Net</span>
+    <span class="s"><b>Reuse</b> nnU-Net</span>
     <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     <span class="s"><b>Segment</b> 4 groups</span>
     <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -239,9 +239,9 @@ pre.log{height:300px;color:#aebaa8;white-space:pre-wrap;word-break:break-word}
   <div class="col-l">
 
     <div class="cases" role="tablist" aria-label="Run type">
-      <button class="case on" data-case="pretrained" role="tab"><span class="n">1</span><b>Stage with pretrained models</b><i>CS17 atlas specimen, project models. Nothing to supply.</i></button>
-      <button class="case" data-case="custom" role="tab"><span class="n">2</span><b>Other stage, own model</b><i>You already trained an nnU-Net: give its HF model repo.</i></button>
-      <button class="case" data-case="train" role="tab"><span class="n">3</span><b>Other stage, train first</b><i>Atlas labels → datasets → 4 group models → reconstruction.</i></button>
+      <button class="case on" data-case="same" role="tab"><span class="n">1</span><b>Same specimen, project model</b><i>CS17-6521 with the project's CS17 models. Atlas volume, or new sections of the same case.</i></button>
+      <button class="case" data-case="other" role="tab"><span class="n">2</span><b>Other specimen or slices</b><i>Atlas .tif + .am, or your own sections. Bring your nnU-Net model.</i></button>
+      <button class="case" data-case="upload" role="tab"><span class="n">3</span><b>Upload sections</b><i>ZIP or dataset link + XY/Z µm. Bring your nnU-Net model.</i></button>
     </div>
 
     <div class="steps">
@@ -264,11 +264,11 @@ pre.log{height:300px;color:#aebaa8;white-space:pre-wrap;word-break:break-word}
       <section class="step glass">
         <h3><span class="num">2</span>Input &amp; registration</h3>
         <p class="lead">Where the grey-level volume comes from and how it is aligned.</p>
-        <div class="row two">
+        <div class="row three">
           <div><label for="input_format">Input</label>
             <select id="input_format">
-              <option value="atlas_am_volume">Atlas grey volume (.tif + .am, already assembled)</option>
-              <option value="raw_section_archive">Raw serial sections (archive)</option>
+              <option value="atlas_am_volume">Atlas grey volume (.tif + .am)</option>
+              <option value="raw_section_archive">Serial sections (ZIP / TAR / dataset link)</option>
             </select></div>
           <div><label for="input_needed">Run registration</label>
             <select id="input_needed">
@@ -276,20 +276,22 @@ pre.log{height:300px;color:#aebaa8;white-space:pre-wrap;word-break:break-word}
               <option value="true">always</option>
               <option value="false">never</option>
             </select></div>
-        </div>
-        <div class="row two" id="atlasRow">
-          <div><label for="atlas_grey_tif_url">Atlas grey tif URL (blank = build from stage + code)</label>
-            <input id="atlas_grey_tif_url" placeholder="http://3datlas.3dembryo.nl/3DAtlas_CS17-6521-grey-v2016-01.tif" spellcheck="false" />
-            <div class="hint">Probed against the live Atlas server; leave empty unless it is non-standard.</div></div>
-          <div><label for="registration_mode">Registration mode</label>
+          <div><label for="registration_mode">Alignment mode</label>
             <select id="registration_mode"><option>always</option><option>never</option><option>auto</option></select></div>
         </div>
-        <div class="row three hidden" id="rawRow">
-          <div><label for="raw_mode">Source</label>
-            <select id="raw_mode"><option value="url">downloadable URL / HF file</option><option value="local_archive">archive on disk</option></select></div>
-          <div><label for="raw_url">Archive URL</label><input id="raw_url" placeholder="https://…/sections.zip" spellcheck="false" /></div>
-          <div><label for="registration_mode2">Registration mode</label>
-            <select id="registration_mode2"><option>always</option><option>never</option><option>auto</option></select></div>
+        <input type="hidden" id="raw_mode" value="url" />
+        <div class="row" id="atlasRow">
+          <div><label for="atlas_grey_tif_url">Atlas grey tif URL (blank = build from stage + code)</label>
+            <input id="atlas_grey_tif_url" placeholder="http://3datlas.3dembryo.nl/3DAtlas_CS17-6521-grey-v2016-01.tif" spellcheck="false" />
+            <div class="hint">The notebook probes the known release suffixes (v2016-01/02/03). Leave empty unless the URL is non-standard.</div></div>
+        </div>
+        <div class="row two hidden" id="rawRow">
+          <div><label for="raw_url">Archive URL or Hugging Face dataset link</label>
+            <input id="raw_url" placeholder="https://…/sections.zip or https://huggingface.co/datasets/you/sections" spellcheck="false" />
+            <div class="hint">A direct ZIP/TAR/RAR, a Hub file URL, or a whole Hub dataset (snapshot). Private Hub repos use the server's HF token.</div></div>
+          <div><label for="raw_file">Or upload an archive</label>
+            <input id="raw_file" type="file" accept=".zip,.tar,.tar.gz,.tgz,.tar.bz2,.tbz2,.tar.xz,.txz,.rar" />
+            <div class="hint">Uploaded to the shared HF dataset when you press Plan or Run. For very large sets, paste a dataset link instead.</div></div>
         </div>
         <div class="row two hidden" id="rawRow2">
           <div><label for="raw_xy_um">XY pixel size (µm) <b>*</b></label><input id="raw_xy_um" type="number" step="0.001" placeholder="4.479" /></div>
@@ -304,59 +306,42 @@ pre.log{height:300px;color:#aebaa8;white-space:pre-wrap;word-break:break-word}
 
       <section class="step glass">
         <h3><span class="num">3</span>Segmentation models</h3>
-        <p class="lead">Reuse the project's networks, bring your own, or train from the Atlas labels.</p>
-        <div class="row three">
+        <p class="lead">Case 1 uses the project's CS17 group models. Cases 2 and 3 use the nnU-Net model you trained and published on Hugging Face.</p>
+        <div class="row two">
           <div><label for="model_source">Model source</label>
             <select id="model_source">
-              <option value="pretrained">pretrained — the project's own CS17 models</option>
-              <option value="custom">custom — researcher-supplied HF model repo</option>
-              <option value="train">train — build datasets + train the group models</option>
+              <option value="pretrained">project — the CS17 4-group models</option>
+              <option value="custom">researcher — my nnU-Net model repo</option>
             </select></div>
-          <div><label for="training_repo">Training checkpoints (HF model repo)</label><input id="training_repo" value="senku111/atlas-cs17-4groups-nnunet-training" spellcheck="false" /></div>
-          <div><label for="dataset_repo">Dataset / groups manifest (HF dataset)</label><input id="dataset_repo" value="senku111/atlas-cs17-4groups-dataset" spellcheck="false" /></div>
+          <div><label for="model_configuration">nnU-Net configuration</label>
+            <select id="model_configuration">
+              <option value="2d">2d</option>
+              <option value="3d_fullres">3d_fullres</option>
+              <option value="3d_lowres">3d_lowres</option>
+              <option value="3d_cascade_fullres">3d_cascade_fullres</option>
+            </select>
+            <div class="hint">Must match the configuration you trained. Case 1 uses <code>2d</code>.</div></div>
         </div>
 
         <div id="customBox" class="sub hidden">
-          <h4>Custom nnU-Net</h4>
-          <div class="row two">
+          <h4>Researcher nnU-Net</h4>
+          <div class="row three">
             <div><label for="model_repo">Your nnU-Net model repo (HF model) <b>*</b></label>
               <input id="model_repo" placeholder="my-user/atlas-cs12-nnunet" spellcheck="false" />
-              <div class="hint">Must hold the <code>groupNN_* / nnUNet_results / Dataset7xx_* / fold_0/…</code> tree plus a groups manifest, unless you paste one below.</div></div>
-            <div><label for="groups_manifest_in_repo">Groups manifest path in that repo</label>
-              <input id="groups_manifest_in_repo" placeholder="(blank = auto)" spellcheck="false" /></div>
+              <div class="hint">Must contain the <code>groupNN_* / nnUNet_results / Dataset7xx_* / fold_N/…</code> tree.</div></div>
+            <div><label for="groups_manifest_in_repo">Groups manifest path (blank = auto)</label>
+              <input id="groups_manifest_in_repo" placeholder="groups_manifest.json" spellcheck="false" /></div>
+            <div><label for="model_fold">Fold</label><input id="model_fold" type="number" min="0" step="1" value="0" /></div>
           </div>
           <div class="row two">
-            <div><label for="norm_lo">Normalisation low</label><input id="norm_lo" type="number" step="0.001" placeholder="(from manifest)" /></div>
-            <div><label for="norm_hi">Normalisation high</label><input id="norm_hi" type="number" step="0.001" placeholder="(from manifest)" /></div>
+            <div><label for="norm_lo">Normalisation low (optional)</label><input id="norm_lo" type="number" step="0.001" placeholder="(from manifest)" /></div>
+            <div><label for="norm_hi">Normalisation high (optional)</label><input id="norm_hi" type="number" step="0.001" placeholder="(from manifest)" /></div>
           </div>
           <div class="row">
             <div><label for="groups_json">Inline groups manifest (optional — YAML/JSON)</label>
-              <textarea id="groups_json" placeholder="[0, 1, 2, 3]&#10;# or the full all_groups_manifest.json" spellcheck="false"></textarea>
-              <div class="hint">Shorthand <code>[0,1,2,3]</code> means one group per entry, or paste the full <code>all_groups_manifest.json</code> (groups + normalisation).</div></div>
+              <textarea id="groups_json" placeholder="groups:&#10;  - group_index: 0&#10;    dataset_id: 701&#10;    dataset_name: AtlasCS12Group0&#10;    atlas_ids: [1, 2, 3]&#10;normalization:&#10;  global_lo: 0&#10;  global_hi: 65535" spellcheck="false"></textarea>
+              <div class="hint">Paste the full manifest (groups + normalization), or leave blank to load <code>groups_manifest.json</code> from your model repo. A bare <code>[0,1,2,3]</code> is rejected: it is ambiguous and used to include background 0.</div></div>
           </div>
-        </div>
-
-        <div id="trainBox" class="sub hidden">
-          <h4>Training</h4>
-          <div class="row two">
-            <div><label for="dataset_source">Training data</label>
-              <select id="dataset_source">
-                <option value="atlas">Atlas labels — data-preparation builds the datasets</option>
-                <option value="nnunet_raw">My own nnU-Net raw dataset (needs groups + norm below)</option>
-              </select></div>
-            <div><label for="groups">Groups to train</label><input id="groups" value="0,1,2,3" /></div>
-          </div>
-          <div class="row three">
-            <div><label for="n_groups">Total groups</label><input id="n_groups" type="number" value="4" /></div>
-            <div><label for="dataset_name_prefix">Dataset name prefix</label><input id="dataset_name_prefix" placeholder="(blank = Atlas&lt;stage&gt;…)" /></div>
-            <div><label for="base_dataset_id">First dataset ID</label><input id="base_dataset_id" type="number" placeholder="701" /></div>
-          </div>
-          <div class="row three">
-            <div><label for="trainer">nnU-Net trainer</label><input id="trainer" placeholder="(blank = nnUNetTrainer_250epochs)" /></div>
-            <div><label for="split_seed">Split seed</label><input id="split_seed" type="number" value="42" /></div>
-            <div><label for="holdout_fraction">Held-out fraction</label><input id="holdout_fraction" type="number" step="0.05" value="0.2" /></div>
-          </div>
-          <div class="hint">Training a full stage takes many GPU-hours. Interrupt it and press <b>Run with resume</b> to continue from the last completed stage — checkpoints are kept on Hugging Face.</div>
         </div>
       </section>
 
@@ -377,8 +362,7 @@ pre.log{height:300px;color:#aebaa8;white-space:pre-wrap;word-break:break-word}
         <p class="lead">Where the notebooks run.</p>
         <div class="row three">
           <div><label for="engine">Engine</label>
-            <select id="engine"><option value="kaggle">kaggle — push each notebook as a GPU kernel</option>
-              <option value="local">local — execute here with papermill</option></select></div>
+            <select id="engine"><option value="kaggle">kaggle — push each notebook as a GPU kernel</option></select></div>
           <div><label for="timeout_s">Kernel timeout (s)</label><input id="timeout_s" type="number" value="21600" /></div>
           <div><label for="run_id">Run ID (optional, for resume)</label><input id="run_id" placeholder="run-1a2b3c4d" spellcheck="false" /></div>
         </div>
@@ -450,27 +434,32 @@ function toast(t) { const n = $("toast"); n.textContent = t; n.classList.add("sh
 
 /* ---------------- cases ---------------- */
 const CASES = {
-  pretrained: {
+  same: {
     specimen_id: "CS17-6521", stage: "CS17", atlas_specimen_id: "6521",
     description: "Carnegie Stage 17, specimen 6521",
     input_format: "atlas_am_volume", input_needed: "auto", model_source: "pretrained",
-    dataset_source: "atlas", engine: "kaggle"
+    model_configuration: "2d", model_fold: 0, model_repo: "", groups_json: "",
+    atlas_grey_tif_url: "", raw_url: "", raw_xy_um: "", raw_z_um: "", engine: "kaggle"
   },
-  custom: {
-    specimen_id: "CS12-8505A", stage: "CS12", atlas_specimen_id: "8505A",
-    description: "Carnegie Stage 12, specimen 8505A",
-    input_format: "atlas_am_volume", input_needed: "auto", model_source: "custom", engine: "kaggle"
+  other: {
+    specimen_id: "", stage: "", atlas_specimen_id: "",
+    description: "",
+    input_format: "atlas_am_volume", input_needed: "true", model_source: "custom",
+    model_configuration: "2d", model_fold: 0, model_repo: "", groups_json: "",
+    atlas_grey_tif_url: "", raw_url: "", raw_xy_um: "", raw_z_um: "", engine: "kaggle"
   },
-  train: {
-    specimen_id: "CS12-8505A", stage: "CS12", atlas_specimen_id: "8505A",
-    description: "Carnegie Stage 12, specimen 8505A",
-    input_format: "atlas_am_volume", input_needed: "true", model_source: "train",
-    dataset_source: "atlas", engine: "kaggle"
+  upload: {
+    specimen_id: "", stage: "", atlas_specimen_id: "",
+    description: "",
+    input_format: "raw_section_archive", input_needed: "true", model_source: "custom",
+    model_configuration: "2d", model_fold: 0, model_repo: "", groups_json: "",
+    atlas_grey_tif_url: "", raw_url: "", raw_xy_um: "", raw_z_um: "", engine: "kaggle"
   }
 };
 document.querySelectorAll(".case").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll(".case").forEach(x => { x.classList.remove("on"); x.setAttribute("aria-selected", "false"); });
   b.classList.add("on"); b.setAttribute("aria-selected", "true");
+  $("raw_file").value = "";
   Object.entries(CASES[b.dataset.case]).forEach(([k, v]) => { const node = $(k); if (node && node.type !== "checkbox") node.value = v; });
   syncUI();
 }));
@@ -480,11 +469,12 @@ function syncUI() {
   ["rawRow", "rawRow2"].forEach(id => $(id).classList.toggle("hidden", fmt !== "raw_section_archive"));
   $("atlasRow").classList.toggle("hidden", fmt !== "atlas_am_volume");
   $("customBox").classList.toggle("hidden", src !== "custom");
-  $("trainBox").classList.toggle("hidden", src !== "train");
+  if (src === "pretrained") { $("model_configuration").value = "2d"; $("model_fold").value = "0"; }
   updateWarns();
 }
-["input_format", "model_source", "dataset_source", "engine", "hf_repo", "disable_tta", "kaggle_gpu", "kaggle_internet"].forEach(id => $(id).addEventListener("change", syncUI));
-$("hf_repo").addEventListener("input", syncUI);
+["input_format", "input_needed", "model_source", "model_configuration", "engine", "hf_repo", "disable_tta", "kaggle_gpu", "kaggle_internet"].forEach(id => $(id).addEventListener("change", syncUI));
+["hf_repo", "raw_url"].forEach(id => $(id).addEventListener("input", syncUI));
+$("raw_file").addEventListener("change", syncUI);
 
 /* ---------------- validation + advisories ---------------- */
 const ICON_ERR = '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v5M12 16v.1"/></svg>';
@@ -499,10 +489,12 @@ function computeWarns() {
   if ($("yaml").value.trim()) return ["A raw spec is set under <b>Advanced</b> — it replaces the whole form."];
   const w = [], src = $("model_source").value;
   if ($("hf_repo").value.trim() === "senku111/embryo-3d") w.push("The default dataset belongs to the original project — make sure your Hugging Face token can write to it, or point to your own.");
-  if (src === "train") w.push("Training a full stage takes many GPU-hours. Use <b>Run with resume</b> to continue if it is interrupted.");
-  if ($("engine").value === "local") w.push("Local engine runs every notebook on this server with papermill — expect it to be slow without a GPU.");
+  if ($("input_format").value === "raw_section_archive" && $("raw_file").files.length) w.push("The archive is uploaded to Hugging Face when you press <b>Plan</b> or <b>Run</b>.");
+  if ($("input_format").value === "raw_section_archive" && $("input_needed").value === "auto") w.push("With <b>auto</b>, registration is skipped when this ID already has a volume. For new sections of an existing case, choose <b>always</b>.");
+  if ($("input_format").value === "raw_section_archive" && $("raw_url").value.trim().includes("huggingface.co")) w.push("A Hugging Face link is read with the server's token, so private datasets work; a plain HTTPS link must be public.");
   if ($("engine").value === "kaggle" && !$("kaggle_internet").checked) w.push("Kaggle internet is off — the kernels cannot reach Hugging Face.");
-  if ($("engine").value === "kaggle" && !$("kaggle_gpu").checked && src !== "pretrained") w.push("GPU is off — segmentation and training will be extremely slow.");
+  if ($("engine").value === "kaggle" && !$("kaggle_gpu").checked) w.push("GPU is off — segmentation will be extremely slow.");
+  if (src === "custom" && $("model_configuration").value !== "2d") w.push("Use the same nnU-Net configuration and fold as the checkpoint you trained.");
   if (!$("disable_tta").checked) w.push("TTA enabled: 4–8× slower inference (best quality for the final run).");
   return w;
 }
@@ -515,11 +507,18 @@ function validate() {
   need("specimen_id", "Specimen ID is required.");
   if ($("specimen_id").value.trim() && /[\s/\\]/.test($("specimen_id").value.trim())) { $("specimen_id").classList.add("bad"); errs.push("Specimen ID cannot contain spaces or slashes (it becomes a folder name)."); }
   if ($("input_format").value === "raw_section_archive") {
-    if ($("raw_mode").value === "url") need("raw_url", "Archive URL is required for a downloadable archive.");
+    const hasFile = $("raw_file").files.length > 0;
+    if (!hasFile) need("raw_url", "Give an archive URL / Hugging Face dataset link, or choose a ZIP/TAR to upload.");
     need("raw_xy_um", "XY pixel size (µm) is required for raw sections.");
     need("raw_z_um", "Section spacing (µm) is required for raw sections.");
+    if (hasFile && $("raw_file").files[0].size > 2 * 1024 * 1024 * 1024) {
+      errs.push("That archive is larger than 2 GB — use a Hugging Face dataset link instead.");
+    }
   }
-  if ($("model_source").value === "custom") need("model_repo", "Your nnU-Net model repo is required for a custom model.");
+  if ($("input_format").value === "atlas_am_volume" && !$("atlas_grey_tif_url").value.trim()) {
+    need("atlas_specimen_id", "Atlas specimen code is required (or give the grey .tif URL).");
+  }
+  if ($("model_source").value === "custom") need("model_repo", "Your nnU-Net model repo is required for a researcher-supplied model.");
   lastErrs = errs; renderMsgs();
   if (errs.length) { const f = document.querySelector(".bad"); if (f) { f.scrollIntoView({ block: "center", behavior: "smooth" }); f.focus({ preventScroll: true }); } }
   return errs;
@@ -547,20 +546,12 @@ function payload(extra = {}) {
     hf_repo: $("hf_repo").value.trim(),
     hf_private: chk("hf_private"),
     model_source: $("model_source").value,
-    training_repo: $("training_repo").value.trim(),
-    dataset_repo: $("dataset_repo").value.trim(),
     model_repo: $("model_repo").value.trim(),
     groups_manifest_in_repo: $("groups_manifest_in_repo").value.trim(),
     groups_json: $("groups_json").value.trim(),
     norm_lo: num("norm_lo"), norm_hi: num("norm_hi"),
-    dataset_source: $("dataset_source").value,
-    groups: $("groups").value.trim(),
-    n_groups: num("n_groups") || 4,
-    dataset_name_prefix: $("dataset_name_prefix").value.trim(),
-    base_dataset_id: num("base_dataset_id"),
-    split_seed: num("split_seed") ?? 42,
-    holdout_fraction: num("holdout_fraction") ?? 0.2,
-    trainer: $("trainer").value.trim(),
+    model_configuration: $("model_configuration").value,
+    model_fold: num("model_fold") ?? 0,
     push_to_hf: chk("push_to_hf"),
     fg_threshold: num("fg_threshold"), max_voxels: num("max_voxels"),
     names: $("names").value.trim(),
@@ -585,11 +576,34 @@ async function api(path, opts) {
   return body;
 }
 
+/* ---------------- upload ---------------- */
+async function ensureUploaded() {
+  const file = $("raw_file").files[0];
+  if ($("input_format").value !== "raw_section_archive" || !file) return true;
+  toast("Uploading archive…");
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("private", chk("hf_private") ? "true" : "false");
+  try {
+    const r = await fetch("/api/uploads", { method: "POST", body: fd });
+    const body = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(body.detail || `HTTP ${r.status}`);
+    $("raw_url").value = body.url;
+    $("raw_file").value = "";
+    toast("Archive uploaded");
+    return true;
+  } catch (e) {
+    showErr("Upload failed: " + e.message);
+    return false;
+  }
+}
+
 /* ---------------- plan ---------------- */
 $("planBtn").addEventListener("click", async () => {
   if (validate().length) return;
   $("planBtn").disabled = true;
   try {
+    if (!(await ensureUploaded())) { $("planBtn").disabled = false; return; }
     const res = await api("/api/plan", { method: "POST", body: JSON.stringify(payload()) });
     $("yamlOut").textContent = YAML(res.spec);
     $("stages").innerHTML = "";
@@ -608,6 +622,7 @@ async function startRun(extra) {
   if (validate().length) return;
   $("runErr").textContent = "";
   try {
+    if (!(await ensureUploaded())) return;
     const res = await api("/api/runs", { method: "POST", body: JSON.stringify(payload(extra)) });
     currentRun = res.run_id;
     if (!$("run_id").value.trim()) $("run_id").value = currentRun;

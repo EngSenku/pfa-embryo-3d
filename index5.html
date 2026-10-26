@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Embryo Atlas · Biometrics</title>
+<title>3D specimen viewer · Biometrics</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500&display=swap" rel="stylesheet">
@@ -280,7 +280,7 @@ svg.i{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.5;stroke
   <!-- left column -->
   <aside class="left" id="left">
     <div class="who">
-      <div><h1 id="specName">Embryo</h1><p>ID: <span id="specId">CS17-6521</span></p></div>
+      <div><h1 id="specName">Specimen</h1><p>ID: <span id="specId">CS17-6521</span></p></div>
       <select id="specPicker" class="specpick" aria-label="Specimen"><option value="CS17-6521" selected>CS17-6521</option></select>
     </div>
     <section class="profile glass tint-mid" id="profile"></section>
@@ -388,6 +388,10 @@ const PROJECT = {
   ],
   dice: { mean: 0.743, best: 0.936, worst: 0.139, group: 3 },   // group-3 held-out slices, trainning3.ipynb
 };
+// The numbers above describe the CS17 project specimen only.  A bundle from
+// another specimen can publish its own project.json next to manifest.json;
+// until it does, the viewer must not present CS17 Dice/training facts as its own.
+let HAS_PROJECT_FACTS = SPECIMEN_ID === "CS17-6521";
 const TIER = [
   { name: "Large",  stat: "g", color: "#d3f28c" },
   { name: "Medium", stat: "g", color: "#33d68f" },
@@ -658,7 +662,7 @@ async function loadOptional() {
   try {
     // per-specimen facts (model groups, held-out dice): overrides the project defaults
     const r0 = await fetch(`${BUNDLE_BASE}project.json`);
-    if (r0.ok) { const j = await r0.json(); Object.assign(PROJECT, j); diceChanged = true; }
+    if (r0.ok) { const j = await r0.json(); Object.assign(PROJECT, j); HAS_PROJECT_FACTS = true; diceChanged = true; }
   } catch {}
   try {
     const r = await fetch(`${BUNDLE_BASE}morphometrics.json`);
@@ -740,12 +744,13 @@ function disableHistology(msg) {
    ========================================================================================== */
 function setSpecimenHeader() {
   const h1 = $("specName"), idEl = $("specId");
-  const desc = VOLUME && VOLUME.desc ? VOLUME.desc : "";
-  if (h1) h1.textContent = desc ? desc.split(",")[0] : SPECIMEN_ID.split("-")[0];
+  const manTitle = BUNDLE && BUNDLE.title ? String(BUNDLE.title) : "";
+  const desc = manTitle || (VOLUME && VOLUME.desc ? VOLUME.desc : "");
+  if (h1) h1.textContent = desc || SPECIMEN_ID;
   if (idEl) idEl.textContent = SPECIMEN_ID;
   const lt = $("loadingTitle");
   if (lt) lt.textContent = `${desc || STAGE} · ${SPECIMEN_ID}`;
-  document.title = `${SPECIMEN_ID} · embryo 3D viewer`;
+  document.title = `${SPECIMEN_ID} · 3D specimen viewer`;
 }
 
 function goToSpecimen(id) {
@@ -1045,7 +1050,7 @@ function structCard(rec) {
   return `<button class="card${S.sel === rec.id ? " sel" : ""}" data-sid="${rec.id}" style="--c:${col}">
     <div class="t"><i></i><span title="${esc(rec.name)}">${esc(rec.name)}</span><em class="ar">${svg(arrow)}</em></div>
     <div class="n">${bigNum(vp.n, vp.u)}</div>
-    <span class="chip">${shareStr(share)} of embryo</span>
+    <span class="chip">${shareStr(share)} of specimen</span>
     ${dotStrip(rec, col)}
     <p class="note">${esc(note)}</p></button>`;
 }
@@ -1064,21 +1069,28 @@ function renderCards() {
   } else if (S.tab === "overview") {
     const { nz: Z, ny, nx, xy, z: zz } = CAL();
     const ext = BUNDLE ? BUNDLE.bbox_ext.map((v) => v.toFixed(1)).join(" × ") : "—";
-    html = [
+    const cards = [
       simpleCard({ t: "Segmented structures", n: String(ORDER.length), u: "labels", chip: `${modelGroups()} model groups`, c: "#33d68f", arrow: ICON.r, note: "Every atlas label is kept; none filtered." }),
       simpleCard({ t: "Labelled volume", ...(() => { const p = volParts(TOTAL_VOL); return { n: p.n, u: p.u }; })(), chip: "all structures", c: "#d3f28c", arrow: ICON.ur, note: `Sum of the ${ORDER.length} predicted structures.` }),
       simpleCard({ t: "Serial sections", n: nf(Z), u: "z-planes", chip: `${zz} µm spacing`, c: "#f3e23d", arrow: ICON.r, note: `Slice grid ${nf(nx)} × ${nf(ny)} px.` }),
       simpleCard({ t: "In-plane resolution", n: xy.toFixed(3), u: "µm / px", chip: "calibrated", c: "#33d68f", arrow: ICON.dr, note: "Read from the registration manifest." }),
       simpleCard({ t: "Bounding box", n: ext.split(" × ")[0] || "—", u: "mm wide", chip: ext + " mm", c: "#d3f28c", note: "Viewer-space extent of the mesh bundle." }),
-      simpleCard({ t: "Held-out Dice", n: PROJECT.dice.mean.toFixed(3), u: "mean", chip: `group ${PROJECT.dice.group}`, c: "#f3e23d", arrow: ICON.r, note: `Best class ${PROJECT.dice.best.toFixed(2)}, weakest ${PROJECT.dice.worst.toFixed(2)}. Slices of one specimen.` }),
-    ].join("");
+    ];
+    if (HAS_PROJECT_FACTS) cards.push(
+      simpleCard({ t: "Held-out Dice", n: PROJECT.dice.mean.toFixed(3), u: "mean", chip: `group ${PROJECT.dice.group}`, c: "#f3e23d", arrow: ICON.r, note: `Best class ${PROJECT.dice.best.toFixed(2)}, weakest ${PROJECT.dice.worst.toFixed(2)}. Slices of one specimen.` })
+    );
+    html = cards.join("");
   } else {
+    if (!HAS_PROJECT_FACTS) {
+      html = `<div class="empty">Per-group training statistics are only published for the CS17 project bundle. This specimen was segmented with a researcher-supplied model.</div>`;
+    } else {
     const nGroups = Math.min(modelGroups(), PROJECT.groups.length);
     html = PROJECT.groups.slice(0, nGroups).map((g, i) => {
       const t = TIER[i % TIER.length];
       const dice = i === PROJECT.dice.group ? `Held-out Dice ${PROJECT.dice.mean.toFixed(3)}` : `${g.pix}% of labelled pixels`;
       return simpleCard({ t: `Group ${i} · ${t.name}`, n: String(g.cls), u: "classes", chip: `${g.train} train / ${g.held} held-out`, c: STATC[t.stat], arrow: ICON.ur, attr: `data-group="${i}"`, note: `${g.pix}% of labelled pixels. ${i === PROJECT.dice.group ? dice : "nnU-Net 2D, fold 0, 250 epochs."}` });
     }).join("");
+    }
   }
   el.innerHTML = html;
 }
@@ -1110,7 +1122,9 @@ function drawDash(canvas, z0, z1, z, Z) {
 function statusFor(rec) {
   if (rec && rec.dice != null) { const d = rec.dice; return d >= 0.8 ? ["ok", "High", "#d3f28c", d] : d >= 0.5 ? ["mid", "Medium", "#f3e23d", d] : ["bad", "Low", "#ff4f4f", d]; }
   if (rec) { const t = rec.tier; return t <= 1 ? ["ok", "High", "#d3f28c", null] : t === 2 ? ["mid", "Medium", "#f3e23d", null] : ["bad", "Low", "#ff4f4f", null]; }
-  return ["mid", "Medium", "#f3e23d", PROJECT.dice.mean];
+  return HAS_PROJECT_FACTS
+    ? ["mid", "Medium", "#f3e23d", PROJECT.dice.mean]
+    : ["mid", "Not published", "#8f9a86", null];
 }
 function zRange(rec) {
   if (rec?.x?.z_slices) return rec.x.z_slices;
@@ -1124,11 +1138,12 @@ function renderLeft() {
   const R = {
     Specimen: [["Stage", STAGE], ["Source", SOURCE], ["Labels", String(ORDER.length || 0)]],
     Calibration: [["XY pixel", `${CAL().xy.toFixed(3)} µm`], ["Z step", `${CAL().z} µm`], ["Sections", nf(Z)]],
-    Pipeline: [["Network", "nnU-Net 2D"], ["Groups", String(modelGroups())], ["Epochs", "250"]],
+    Pipeline: [["Network", `nnU-Net ${(BUNDLE && BUNDLE.model_configuration) || "2D"}`], ["Groups", String(modelGroups())], ["Fold", String((BUNDLE && BUNDLE.model_fold) ?? 0)]],
   }[S.rec];
   const zr = zRange(rec) || [0, Z - 1]; const span = Math.max(0, zr[1] - zr[0] + 1);
   const rl = rec ? `${nf(span)} sections` : `${nf(Z)} sections`;
-  const showMark = !rec || dval != null; const markPct = Math.round(clamp(dval ?? PROJECT.dice.mean, 0, 1) * 100);
+  const showMark = HAS_PROJECT_FACTS && (!rec || dval != null);
+  const markPct = Math.round(clamp(dval ?? (HAS_PROJECT_FACTS ? PROJECT.dice.mean : 0), 0, 1) * 100);
   p.classList.toggle("collapsed", !S.profOpen);
   p.innerHTML = `<div class="top"><h3><button id="pToggle" aria-expanded="${S.profOpen}">Specimen profile${svg(ICON.chevU, "chev")}</button></h3><div class="pbody">
     <div class="rtabs">${["Specimen", "Calibration", "Pipeline"].map((n) => `<button data-rec="${n}" class="${S.rec === n ? "on" : ""}">${n}</button>`).join("")}</div>
@@ -1136,7 +1151,7 @@ function renderLeft() {
     <div class="trend"><div class="row"><span>${rec ? "Section coverage" : "Section range"}</span><span>${rl}</span></div><canvas id="dash"></canvas></div></div></div>
     <div class="conf"><div class="hd"><span>Accuracy <small style="color:var(--dim)">(Dice)</small></span><span class="st"><span class="dot" style="--c:${col}"></span>${word}</span></div>
       <div class="bar">${showMark ? `<i style="left:${markPct}%"></i>` : ""}</div>
-      <div class="nums"><span>${PROJECT.dice.worst.toFixed(2)}<small>hardest structure</small></span><span style="text-align:center">${PROJECT.dice.mean.toFixed(2)}<small>average</small></span><span style="text-align:right">${PROJECT.dice.best.toFixed(2)}<small>easiest structure</small></span></div></div>`;
+      ${HAS_PROJECT_FACTS ? `<div class="nums"><span>${PROJECT.dice.worst.toFixed(2)}<small>hardest structure</small></span><span style="text-align:center">${PROJECT.dice.mean.toFixed(2)}<small>average</small></span><span style="text-align:right">${PROJECT.dice.best.toFixed(2)}<small>easiest structure</small></span></div>` : `<div class="nums"><span style="text-align:center;color:var(--dim)">Dice is not published for this researcher-supplied model.</span></div>`}</div>`;
   drawDash($("dash"), zr[0], zr[1], S.z, Z);
 }
 $("profile").addEventListener("click", (e) => {
@@ -1216,9 +1231,11 @@ document.querySelectorAll(".arc .nd").forEach((b) => b.addEventListener("click",
 $("repBtn").addEventListener("click", () => showMenu($("repBtn"), [
   { label: "Export morphometrics", hint: "CSV", onClick: exportCSV }, { label: "Save current view", hint: "PNG", onClick: savePNG }, { label: "Copy summary", hint: "text", onClick: copySummary }, "-",
   { label: "Reset camera", onClick: () => flyTo(defaultPos, defaultTgt, 0.9) }, "-",
-  { label: "Dataset", hint: "Hugging Face", onClick: () => open("https://huggingface.co/datasets/senku111/embryo-3d", "_blank") },
-  { label: "Training data", hint: "Hugging Face", onClick: () => open("https://huggingface.co/datasets/senku111/atlas-cs17-4groups-dataset", "_blank") },
-  { label: "Model checkpoints", hint: "Hugging Face", onClick: () => open("https://huggingface.co/senku111/atlas-cs17-4groups-nnunet-training", "_blank") }], { right: true }));
+  { label: "Dataset", hint: "Hugging Face", onClick: () => open(`https://huggingface.co/datasets/${HF_REPO}`, "_blank") },
+  ...(HAS_PROJECT_FACTS ? [
+    { label: "Training data", hint: "Hugging Face", onClick: () => open("https://huggingface.co/datasets/senku111/atlas-cs17-4groups-dataset", "_blank") },
+    { label: "Model checkpoints", hint: "Hugging Face", onClick: () => open("https://huggingface.co/senku111/atlas-cs17-4groups-nnunet-training", "_blank") },
+  ] : [])], { right: true }));
 const si = $("searchInput");
 si.addEventListener("input", () => { S.q = si.value; renderCards(); });
 $("tglL").addEventListener("click", () => { document.body.classList.toggle("showL"); document.body.classList.remove("showR"); });

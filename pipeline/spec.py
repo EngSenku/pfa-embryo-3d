@@ -54,6 +54,7 @@ VALID_ENGINES = ("kaggle", "local")
 VALID_MODEL_SOURCES = ("pretrained", "custom", "train")
 VALID_INPUT_FORMATS = ("atlas_am_volume", "raw_section_archive")
 VALID_DATASET_SOURCES = ("atlas", "nnunet_raw")
+VALID_RAW_MODES = ("url", "local_archive", "local_folder")
 
 NOTEBOOKS = {
     "registration": "registration-final.ipynb",
@@ -141,7 +142,26 @@ class Spec:
 
     @property
     def atlas_specimen_id(self) -> str:
-        return str(self.specimen.get("atlas_specimen_id") or "")
+        """Atlas specimen code, falling back to the part after ``CSxx-``.
+
+        The web form lets a researcher enter only ``CS12-8505A``; the Atlas
+        filename then needs ``CS12`` and ``8505A`` separately.
+        """
+        explicit = str(self.specimen.get("atlas_specimen_id") or "").strip()
+        if explicit:
+            return explicit
+        sid = str(self.specimen.get("id") or "").strip()
+        if "-" in sid:
+            return sid.split("-", 1)[1]
+        return ""
+
+    @property
+    def atlas_stage(self) -> str:
+        explicit = str(self.specimen.get("stage") or "").strip()
+        if explicit:
+            return explicit
+        sid = str(self.specimen.get("id") or "").strip()
+        return sid.split("-", 1)[0] if "-" in sid else ""
 
     @property
     def input(self) -> dict:
@@ -201,7 +221,15 @@ class Spec:
         else:
             raw = _as_dict(self.input.get("raw"), "input.raw")
             mode = str(raw.get("mode") or "url")
-            _require(mode in ("url", "local_archive"), f"input.raw.mode must be url/local_archive")
+            _require(mode in VALID_RAW_MODES,
+                     f"input.raw.mode must be one of {VALID_RAW_MODES}, got {mode!r}")
+            # A Kaggle kernel cannot see this server's disk: local paths only work
+            # with run.engine=local (the CLI / a workstation).
+            if self.engine == "kaggle" and mode in ("local_archive", "local_folder"):
+                raise SpecError(
+                    "input.raw.mode=local_archive/local_folder only works with run.engine=local. "
+                    "On Kaggle, upload the archive with POST /api/uploads or give an HTTPS link "
+                    "(a direct archive URL or a Hugging Face dataset URL).")
             if needed in (True, "true") and mode == "url":
                 _require(bool(raw.get("url") or raw.get("archive_url")),
                          "input.raw.url is required when input.format=raw_section_archive")
@@ -214,14 +242,19 @@ class Spec:
     def _validate_models(self) -> None:
         src = self.model_source
         if src == "custom":
-            has_inline = bool(self.models.get("groups_json") or self.models.get("groups_manifest"))
-            _require(bool(self.models.get("model_repo")) or has_inline,
-                     "models.source=custom needs models.model_repo (HF model repo with nnU-Net v2 "
-                     "checkpoints + a groups manifest), or an inline models.groups + models.norm")
+            _require(bool(self.models.get("model_repo")),
+                     "models.source=custom needs models.model_repo: the HF model repo that holds "
+                     "the nnU-Net v2 checkpoints. An inline groups manifest describes classes, it "
+                     "does not contain checkpoints.")
             if self.models.get("norm"):
                 norm = _as_dict(self.models.get("norm"), "models.norm")
                 _require("lo" in norm and "hi" in norm, "models.norm needs lo and hi "
                          "(the grey-normalisation range used for training)")
+            groups = self.models.get("groups")
+            if groups is not None:
+                # Validate now so the failure is a 4xx on the form, not a dead
+                # Kaggle notebook ten minutes later.
+                _groups_manifest_payload(groups, self.models)
         elif src == "train":
             dsrc = str(self.models.get("dataset_source") or "atlas")
             _require(dsrc in VALID_DATASET_SOURCES,
@@ -244,15 +277,27 @@ class Spec:
         return None
 
     def atlas_urls(self) -> tuple[str, str]:
-        """(grey tif url, .am url) for atlas input, honouring spec overrides."""
+        """(grey tif url, .am url) for atlas input, honouring spec overrides.
+
+        The version suffix is not stable across stages (CS15 uses ``v2016-01``,
+        CS09/CS12 use ``v2016-03`` on some servers).  The URL built here is only
+        the first candidate; the registration notebook probes
+        ``ATLAS_VERSION_CANDIDATES`` when it 404s.
+        """
         if self.input.get("atlas_grey_tif_url"):
             grey = str(self.input["atlas_grey_tif_url"])
         else:
             _require(bool(self.atlas_specimen_id),
                      "input.atlas_grey_tif_url or specimen.atlas_specimen_id required for atlas input")
             base = "http://3datlas.3dembryo.nl"
-            grey = f"{base}/3DAtlas_{self.stage}-{self.atlas_specimen_id}-grey-v2016-01.tif"
-        am = str(self.input.get("atlas_am_url") or grey.rsplit("-grey-", 1)[0] + "-grey-v2016-01.am")
+            grey = (f"{base}/3DAtlas_{self.atlas_stage or self.stage}-"
+                    f"{self.atlas_specimen_id}-grey-v2016-01.tif")
+        if self.input.get("atlas_am_url"):
+            am = str(self.input["atlas_am_url"])
+        elif grey.lower().endswith(".tif"):
+            am = grey[:-4] + ".am"
+        else:
+            am = grey + ".am"
         return grey, am
 
     # --- notebook parameter sets -------------------------------------------
@@ -260,9 +305,10 @@ class Spec:
         p = params_cells.defaults_for("registration")
         p.update({
             "SPECIMEN_ID": self.specimen_id,
-            "SPECIMEN_DESC": self.specimen.get("description")
-                or f"{self.stage}, specimen {self.atlas_specimen_id or self.specimen_id}",
+            "SPECIMEN_DESC": self.specimen.get("description") or self.title or self.specimen_id,
             "SPECIMEN_FORMAT": self.input.get("format") or "atlas_am_volume",
+            "STAGE": self.atlas_stage or self.stage,
+            "ATLAS_SPECIMEN_ID": self.atlas_specimen_id,
             "REGISTRATION_MODE": self.input.get("registration_mode") or "always",
             "PUSH_TO_HF": bool(self.input.get("push_to_hf", True)),
             "HF_REPO_ID": self.shared_repo,
@@ -275,6 +321,12 @@ class Spec:
         if fmt == "atlas_am_volume":
             grey, am = self.atlas_urls()
             p["ATLAS_GREY_TIF_URL"], p["ATLAS_AM_URL"] = grey, am
+            bases = self.input.get("atlas_base_urls")
+            if bases:
+                p["ATLAS_BASE_URLS"] = [str(b) for b in bases]
+            versions = self.input.get("atlas_version_candidates")
+            if versions:
+                p["ATLAS_VERSION_CANDIDATES"] = [str(v) for v in versions]
         else:
             raw = _as_dict(self.input.get("raw"), "input.raw")
             p["RAW_INPUT_MODE"] = raw.get("mode") or "url"
@@ -352,14 +404,24 @@ class Spec:
             "HF_SHARED_REPO_ID": self.shared_repo,
             "N_GROUPS": self.n_groups,
             "MODEL_SOURCE": "custom" if src == "custom" else "existing",
+            "CONFIGURATION": str(m.get("configuration") or p["CONFIGURATION"]),
+            "MODEL_FOLD": int(m.get("fold") if m.get("fold") is not None else p["MODEL_FOLD"]),
+            "BUNDLE_TITLE": str(r.get("bundle_title") or self.specimen.get("description")
+                                or self.title or self.specimen_id),
             "PUSH_TO_HF": bool(r.get("push_to_hf", True)),
         })
         if src == "custom":
             p["MODEL_REPO"] = m.get("model_repo")
             p["GROUPS_MANIFEST_IN_REPO"] = m.get("groups_manifest_in_repo")
-            if m.get("groups_json"):
-                gj = m["groups_json"]
-                p["GROUPS_JSON"] = gj if isinstance(gj, str) else _groups_manifest_payload(gj, m)
+            p["GROUPS_MANIFEST_SPECIMEN_ID"] = (
+                m.get("groups_manifest_specimen") or m.get("specimen") or self.specimen_id)
+            inline = m.get("groups_json")
+            if inline is None:
+                inline = m.get("groups")
+            if inline:
+                p["GROUPS_JSON"] = (
+                    inline if isinstance(inline, str)
+                    else _groups_manifest_payload(inline, m))
             if m.get("norm"):
                 norm = _as_dict(m.get("norm"), "models.norm")
                 p["NORM_OVERRIDE_LO"] = float(norm["lo"])
@@ -439,27 +501,54 @@ class Spec:
 
 
 def _groups_manifest_payload(groups: Any, models: dict) -> dict:
-    """Build a full groups manifest from a spec's inline `models.groups`."""
-    _require(isinstance(groups, list) and groups, "models.groups must be a non-empty list")
+    """Build a full groups manifest from a spec's inline ``models.groups``.
+
+    The inline form must be explicit: one mapping per group, with the atlas
+    structure ids and the dataset that group's nnU-Net model was trained on.
+    A bare ``[0, 1, 2, 3]`` is ambiguous (group indexes? structure ids? labels
+    including background?) and used to silently produce a manifest that mapped
+    background 0 as a structure.  It is rejected here.
+    """
+    inline_specimen = None
+    inline_norm = None
+    if isinstance(groups, dict):
+        inline_specimen = groups.get("specimen")
+        inline_norm = groups.get("normalization")
+        groups = groups.get("groups")
+    _require(isinstance(groups, list) and groups,
+             "models.groups must be a non-empty list of group mappings")
     norm = _as_dict(models.get("norm"), "models.norm")
-    _require("lo" in norm and "hi" in norm, "inline models.groups requires models.norm.{lo,hi}")
+    if not ("lo" in norm and "hi" in norm) and isinstance(inline_norm, dict):
+        norm = {"lo": inline_norm.get("global_lo"), "hi": inline_norm.get("global_hi")}
+    _require("lo" in norm and "hi" in norm,
+             "inline models.groups requires models.norm.{lo,hi} (or a manifest "
+             "normalization.global_lo/global_hi)")
+    seen: set[int] = set()
     out_groups = []
     for i, g in enumerate(groups):
-        if isinstance(g, dict):
-            entry = {"group_index": int(g.get("group_index", i)),
-                     "dataset_id": int(g["dataset_id"]),
-                     "dataset_name": str(g["dataset_name"]),
-                     "atlas_ids": [int(a) for a in g["atlas_ids"]],
-                     "n_classes": int(g.get("n_classes", len(g["atlas_ids"]))),
-                     "total_positive_pixels": int(g.get("total_positive_pixels", 0))}
-        else:  # shorthand: plain structure ids -> one group
-            entry = {"group_index": i, "dataset_id": 701 + i,
-                     "dataset_name": f"SpecimenGroup{i:02d}",
-                     "atlas_ids": [int(a) for a in g],
-                     "n_classes": len(g), "total_positive_pixels": 0}
+        _require(isinstance(g, dict),
+                 "models.groups entries must be full group mappings with dataset_id, "
+                 "dataset_name and atlas_ids; the shorthand [0,1,2,3] is ambiguous "
+                 "and is no longer accepted. Leave models.groups empty to load the "
+                 "manifest from models.groups_manifest_in_repo instead.")
+        missing = [k for k in ("dataset_id", "dataset_name", "atlas_ids") if k not in g]
+        _require(not missing,
+                 f"models.groups[{i}] is missing {', '.join(missing)}")
+        atlas_ids = [int(a) for a in g["atlas_ids"]]
+        _require(bool(atlas_ids), f"models.groups[{i}].atlas_ids is empty")
+        overlap = seen.intersection(atlas_ids)
+        _require(not overlap,
+                 f"structure id(s) {sorted(overlap)} appear in more than one group")
+        seen.update(atlas_ids)
+        entry = {"group_index": int(g.get("group_index", i)),
+                 "dataset_id": int(g["dataset_id"]),
+                 "dataset_name": str(g["dataset_name"]),
+                 "atlas_ids": atlas_ids,
+                 "n_classes": int(g.get("n_classes", len(atlas_ids))),
+                 "total_positive_pixels": int(g.get("total_positive_pixels", 0))}
         out_groups.append(entry)
     return {
-        "specimen": models.get("specimen") or "",
+        "specimen": models.get("specimen") or inline_specimen or "",
         "normalization": {"global_lo": float(norm["lo"]), "global_hi": float(norm["hi"]),
                           "source": "spec"},
         "groups": out_groups,

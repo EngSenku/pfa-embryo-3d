@@ -36,6 +36,8 @@ input:
 models:
   source: custom
   model_repo: my-user/atlas-cs12-nnunet           # HF *model* repo with the checkpoints
+  configuration: 2d                              # must match the trained nnU-Net configuration
+  fold: 0                                        # must match the published checkpoint fold
   groups_manifest_in_repo: null                   # null = look in the default locations
   # --- alternative: inline the manifest instead of shipping one in the repo ---
   # groups:

@@ -60,19 +60,32 @@ Why this split is the professional choice for a research pipeline:
 
 ### a. Own the Hugging Face repositories
 
-The defaults point at the project's public repositories:
+The deployment uses three project repositories:
 
 | Purpose | Default | Field in the spec / form |
 | --- | --- | --- |
-| shared outputs (`volumes/`, `slices/`, `viewers/`) | `senku111/embryo-3d` | `input.hf_repo` |
-| training datasets + groups manifest | `senku111/atlas-cs17-4groups-dataset` | `models.dataset_repo` |
-| training checkpoints | `senku111/atlas-cs17-4groups-nnunet-training` | `models.training_repo` |
+| shared outputs (`volumes/`, `slices/`, `viewers/`, run state, uploads) | `senku111/embryo-3d` | `input.hf_repo` / `PFA_SHARED_REPO` |
+| CS17 groups manifest + training dataset (case 1) | `senku111/atlas-cs17-4groups-dataset` | `models.dataset_repo` |
+| CS17 4-group checkpoints (case 1 only) | `senku111/atlas-cs17-4groups-nnunet-training` | `models.training_repo` |
+
+The training dataset and checkpoint repos are **not needed by cases 2 and 3**:
+those cases use the researcher's model repo. They remain because case 1
+reproduces the project models and because the report documents the training
+chain. If the dataset repo is private or missing, case 1 has a read-only
+fallback: the reconstruction notebook derives the group layout and Atlas ids
+from the `dataset.json` files in the checkpoint repo, then applies the CS17
+normalisation range. No extra upload is needed.
 
 A token can only write to repositories the account owns (or is invited to), so
-**a researcher who wants their own specimens should create their own three
-repositories** — or be added as a collaborator to the shared ones. The training
-notebook creates a missing model repo automatically, the others are created by
-`pipeline/hfio.py` when the first artifact is pushed.
+**a researcher who wants their own specimens should point the form at their own
+dataset repo** — or be added as a collaborator to the shared one. A missing
+shared dataset is created by `pipeline/hfio.py` when the first artifact is
+pushed. Form uploads go to `PFA_UPLOAD_REPO` (defaults to the shared dataset);
+set it to a separate dataset if you do not want uploads mixed with artifacts.
+
+`POST /api/uploads` is intentionally unauthenticated so the public form works.
+Protect it with a host-level WAF/rate limit or a separate upload repo if the
+deployment is public; the default size cap is `PFA_MAX_UPLOAD_MB=2048`.
 
 ### b. Hugging Face token (app secret)
 
@@ -139,6 +152,7 @@ Also make sure **GPU** is enabled on that Kaggle account for the GPU stages.
    * `KAGGLE_API_TOKEN` (or `KAGGLE_USERNAME` + `KAGGLE_KEY`)
    * `PFA_SHARED_REPO` = `senku111/embryo-3d`
    * `PFA_RUNS_DIR` = `/data/pfa-runs`
+   * optional: `PFA_UPLOAD_REPO`, `PFA_MAX_UPLOAD_MB`
 5. **Create Web Service**. Render may ask for card verification: the plan stays
    **$0/month** and the $1 authorization is released, it is not a charge.
 6. Wait for the first build (~3–5 min), open the URL, and confirm
@@ -153,10 +167,9 @@ Notes: Render injects `$PORT` (the Dockerfile honours it), free services sleep
 after ~15 min idle (first visit ~30–50 s), and the disk is ephemeral — run state
 is mirrored to `runs/<id>/` on the Hub and auto-resumed, so this is safe.
 
-> The Hugging Face source mirror
-> (<https://huggingface.co/datasets/senku111/pfa-source>) remains useful as an
-> anonymously clonable archive, but Render rejects that URL. Use GitHub or an
-> image registry as the Render source.
+> `senku111/pfa-source` is an older source mirror and is **not used** by the
+> current deployment. Render cannot build from a Hugging Face dataset URL; use
+> GitHub (or an image registry). Keep or delete that repo independently.
 
 **Option 2 — Hugging Face Space (only if the account has PRO):**
 
@@ -187,12 +200,20 @@ build never sees them.
    account over the network (`creds.kaggle_account`).
 2. Press **Plan** with the default (case 1) form → you should see
    `registration` + `reconstruct`.
-3. Press **Dry run (prepare only)** → status reaches `done` in a few seconds
+3. Switch to **case 2**, enter another Atlas specimen id, your model repo,
+   configuration and fold → **Plan** shows the same two stages with
+   `MODEL_SOURCE=custom`.
+4. Switch to **case 3**, paste a small ZIP or choose one, enter XY/Z µm →
+   **Plan** uploads the archive (`POST /api/uploads`) and shows
+   `input.format=raw_section_archive` with your µm values.
+5. Press **Dry run (prepare only)** → status reaches `done` in a few seconds
    without touching Kaggle (registration is skipped when the volume already
    exists).
-4. Press **Run** → the first stage appears as a kernel under
+6. Press **Run** → the first stage appears as a kernel under
    `kernels/list?search=pfa-`. The kernel slug follows the notebook, so the
    runner polls the slug Kaggle reports rather than a guessed one.
+7. Open the viewer link after reconstruction; for a non-CS17 bundle, confirm the
+   header uses the bundle title and the CS17 Dice card is absent.
 
 ---
 
@@ -200,7 +221,8 @@ build never sees them.
 
 | Who | What |
 | --- | --- |
-| Researcher (no terminal) | open the web app, pick a case, **Plan**, **Run**, follow the status card, open the viewer link |
+| Researcher (no terminal) | open the web app, pick one of the three cases, **Plan**, **Run**, follow the status card, open the viewer link |
+| Researcher (own model) | train/publish an nnU-Net v2 model repo first, then use case 2 or 3 with its groups manifest, `configuration` and `fold` |
 | Researcher (terminal/CI) | `python3 run_pipeline.py --spec specs/my-run.yaml [--engine kaggle] [--resume]` |
 | Maintainer | read `GET /api/runs` on the web app, or `runs/<run_id>/` on disk |
 | Anyone | browse `https://huggingface.co/datasets/<repo>/tree/main/viewers/<id>` |
@@ -232,18 +254,32 @@ anything fails the run with the log path.
   (defaults to `PFA_SHARED_REPO`).
 * **Large shared datasets** — the viewer fetches from the Hub by URL; nothing
   is proxied through the web app, so the web tier stays free.
+* **Form uploads** — `PFA_MAX_UPLOAD_MB` (default 2048). The archive is
+  streamed to disk, uploaded to `PFA_UPLOAD_REPO`, then deleted. For anything
+  larger, give a Hugging Face dataset link. The endpoint has no application
+  login: put the host behind a WAF/rate limit if it is public.
+* **Custom models** — `configuration` and `fold` must match the published
+  checkpoint. A mismatched configuration fails in `nnUNetv2_predict`; a
+  mismatched fold fails when the notebook looks for `fold_N/`.
 
 ---
 
 ## 5. Operational checklist
 
 ```
-[ ] Render web service created from the public mirror (or the GitHub Blueprint)
+[ ] Render web service created from the public GitHub repo (Docker, Free)
 [ ] Web-app env vars: HF_TOKEN + KAGGLE_API_TOKEN  (or KAGGLE_USERNAME + KAGGLE_KEY)
+[ ] Optional: PFA_UPLOAD_REPO + PFA_MAX_UPLOAD_MB
 [ ] Kaggle GPU enabled; HF_TOKEN is injected into each pushed private kernel
 [ ] Repos exist (or the researcher's repos are filled in on the form)
+[ ] After each push: Manual Deploy → Deploy latest commit
+[ ] GET /api/version → current APP_VERSION and commit
 [ ] GET /api/health → ok
+[ ] Case 1 Atlas Plan → registration + reconstruct
+[ ] Case 2 custom model Plan → MODEL_SOURCE=custom, configuration/fold present
+[ ] Case 3 small ZIP upload → POST /api/uploads returns a URL, raw µm present
 [ ] Dry run → done
 [ ] Real run → kernels visible in Kaggle, artifacts visible on the Hub
 [ ] /viewer/?specimen=<id> renders the bundle
+[ ] Non-CS17 bundle: header title + no CS17 Dice card
 ```

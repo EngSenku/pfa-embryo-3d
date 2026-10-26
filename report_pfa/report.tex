@@ -1,0 +1,948 @@
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,longtable,array,tabularx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+
+\setstretch{1.1}
+\setlength{\parskip}{4pt}
+\emergencystretch=3em
+\tolerance=800
+\captionsetup{font=small,labelfont=bf}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small PFA -- Reconstruction 3D de l'embryon humain}
+\fancyhead[R]{\small ENSA Tanger}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\lstset{basicstyle=\ttfamily\footnotesize,breaklines=true,frame=single,backgroundcolor=\color{gray!6},rulecolor=\color{gray!50},columns=fullflexible,keepspaces=true}
+
+\newcommand{\safeimg}[5]{%
+  \begin{figure}[H]
+  \centering
+  \IfFileExists{#1}{\includegraphics[width=#2]{#1}}{\fbox{\parbox{0.8\textwidth}{\centering\vspace{1.2cm}Image manquante : \texttt{\detokenize{#1}}\vspace{1.2cm}}}}
+  \caption[#5]{#3}\label{#4}
+  \end{figure}}
+\newcommand{\progimg}[2]{%
+  \begin{subfigure}[t]{0.48\textwidth}
+  \centering
+  \IfFileExists{#1}{\includegraphics[width=\textwidth,height=0.42\textheight,keepaspectratio]{#1}}{\fbox{\parbox{0.9\textwidth}{\centering\vspace{3cm}Image manquante\\\texttt{\detokenize{#1}}\vspace{3cm}}}}
+  \caption{#2}
+  \end{subfigure}}
+
+\tikzset{
+  blk/.style={rectangle,draw=black!70,rounded corners=3pt,align=center,fill=blue!7,font=\footnotesize,minimum height=1.25cm,text width=2.6cm,inner sep=3pt},
+  dat/.style={blk,dashed,fill=gray!12},
+  res/.style={blk,fill=green!12},
+  wrn/.style={blk,fill=orange!14},
+  ar/.style={-{Stealth[length=2.2mm]},thick,black!75}
+}
+\begin{document}
+
+\begin{titlepage}
+    \newgeometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+    \thispagestyle{empty}
+    \centering
+
+    \includegraphics[height=2.3cm]{logo_ensat.jpg}
+    \hfill
+    \includegraphics[height=2.9cm]{logo_fmpt.png}
+
+    \vspace{1.5cm}
+
+    {\Large \textbf{École Nationale des Sciences Appliquées de Tanger}}\\[0.3cm]
+    {\large Département Génie Informatique}\\[0.15cm]
+    {\large Université Abdelmalek Essaâdi}
+
+    \vfill
+
+    {\large \textbf{RAPPORT DE PROJET DE FIN D'ANNÉE (PFA)}}
+
+    \vspace{1.2cm}
+
+    {\LARGE \bfseries De l'histologie sériée à l'anatomie 3D : développement d'une chaîne computationnelle pour la reconstruction tridimensionnelle de l'embryon humain\par}
+
+    \vspace{1.2cm}
+
+    \rule{0.25\textwidth}{0.4pt}
+
+    \vfill
+
+    \begin{minipage}[t]{0.36\textwidth}
+        \centering
+        {\large Réalisé par :}\\[0.3cm]
+        {\large \textbf{ABBOU Mohamed}}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.60\textwidth}
+        \centering
+        {\large Encadré par :}\\[0.3cm]
+        {\large \textbf{Mme Pr Idrissi Serhrouchni Karima}}\\[0.1cm]
+        {\large \textbf{Pr Abdelmonaime LACHKAR}}
+    \end{minipage}
+
+    \vfill
+
+    {\large Année universitaire 2025--2026}
+
+    \restoregeometry
+\end{titlepage}
+
+\pagenumbering{roman}
+
+\chapter*{Remerciements}
+\addcontentsline{toc}{chapter}{Remerciements}
+
+Je tiens à exprimer ma profonde gratitude à mon encadrante, Mme Pr Idrissi Serhrouchni Karima, pour la confiance qu'elle m'a accordée, pour la richesse des échanges scientifiques et pour l'éclairage anatomique et embryologique sans lequel ce projet n'aurait pas pu être mené à bien. Ses remarques ont été déterminantes pour la validation des structures reconstruites.
+
+Mes remerciements vont également à Pr Abdelmonaime Lachkar, pour son encadrement, ses conseils méthodologiques et son exigence, qui m'ont permis de structurer ce travail et de l'inscrire dans une démarche rigoureuse.
+
+Je remercie l'ensemble du corps enseignant du Département Génie Informatique de l'ENSA de Tanger pour la formation reçue, ainsi que les membres du jury pour l'attention portée à ce travail.
+
+Je remercie enfin l'équipe à l'origine de l'Atlas 3D du développement humain, dont les données ouvertes ont constitué le socle expérimental de ce projet, ainsi que ma famille et mes proches pour leur soutien constant.
+
+\vspace{0.5cm}
+\hfill \textit{ABBOU Mohamed}
+
+\chapter*{Résumé}
+\addcontentsline{toc}{chapter}{Résumé}
+
+La reconstruction tridimensionnelle de structures anatomiques à partir de coupes histologiques sériées constitue un problème important en imagerie biomédicale. L'histologie fournit une information anatomique fine au niveau tissulaire, mais cette information est acquise sous la forme d'une succession de coupes bidimensionnelles. La représentation 3D permet, quant à elle, de restituer l'organisation spatiale des structures et d'en permettre une analyse morphologique et quantitative.
+
+Ce projet a pour objectif de développer une chaîne computationnelle permettant de passer de coupes histologiques sériées bidimensionnelles à une représentation anatomique tridimensionnelle cohérente. La méthodologie proposée combine plusieurs étapes, notamment le prétraitement des images, le recalage des coupes successives, la segmentation des structures anatomiques et leur reconstruction en trois dimensions. L'ensemble de la chaîne vise à préserver la continuité spatiale entre les différentes sections tout en maintenant la correspondance entre les structures reconstruites et les images histologiques originales.
+
+L'embryon humain constitue le cas d'étude principal de ce travail. Cette application est particulièrement pertinente en raison de la complexité de l'organisation anatomique embryonnaire, de la petite taille de nombreuses structures et des transformations morphologiques rapides qui caractérisent le développement. Dans ce contexte, l'IRM permet d'obtenir une représentation tridimensionnelle de l'embryon mais ne fournit pas le niveau de détail anatomique nécessaire à la reconstruction tridimensionnelle fine des structures embryonnaires. L'histologie sériée constitue donc une source essentielle d'information pour accéder à cette précision anatomique, tout en nécessitant une reconstruction computationnelle pour retrouver l'organisation spatiale complète.
+
+La chaîne développée est appliquée à différents stades du développement embryonnaire, avec une adaptation des modèles de segmentation aux caractéristiques anatomiques propres à chaque stade. Les reconstructions obtenues ne constituent pas uniquement des modèles de visualisation : elles offrent une représentation tridimensionnelle permettant d'étudier les volumes, les dimensions, les positions et les relations spatiales entre les structures anatomiques. Elles fournissent ainsi une base pour l'analyse quantitative de l'organisation et de l'évolution de l'anatomie embryonnaire au cours du développement.
+
+La chaîne est exposée sous la forme d'une application web gratuite qui distingue trois cas de déploiement : reproduire le spécimen CS17-6521 avec les modèles du projet, soumettre un autre spécimen ou des coupes quelconques avec un modèle fourni par le chercheur, ou téléverser une archive de coupes brutes avec son échelle physique. Le calcul reste délégué à Kaggle et les artefacts sont publiés sur Hugging Face.
+
+\textbf{Mots-clés :} histologie sériée, reconstruction tridimensionnelle, recalage d'images, segmentation, vision par ordinateur, intelligence artificielle, anatomie 3D, embryon humain, développement embryonnaire, morphométrie 3D.
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+Three-dimensional reconstruction of anatomical structures from serial histological sections is an important problem in biomedical imaging. Histology provides fine tissue-level anatomical information, but this information is acquired as a sequence of two-dimensional sections. Three-dimensional representation, on the other hand, makes it possible to recover the spatial organization of anatomical structures and to perform morphological and quantitative analyses.
+
+This project aims to develop a computational pipeline for transforming serial two-dimensional histological sections into a coherent three-dimensional anatomical representation. The proposed methodology combines several stages, including image preprocessing, registration of successive sections, anatomical segmentation, and three-dimensional reconstruction. The complete pipeline is designed to preserve spatial continuity between sections while maintaining the correspondence between reconstructed structures and their original histological evidence.
+
+The human embryo is used as the main case study. This application is particularly relevant because of the complexity of embryonic anatomy, the small size of many anatomical structures, and the rapid morphological changes occurring throughout development. In this context, MRI provides a three-dimensional representation of the embryo but does not provide the level of anatomical detail required for fine three-dimensional reconstruction of embryonic structures. Serial histology therefore provides an essential source of high-resolution anatomical information, while computational reconstruction is required to recover its complete spatial organization.
+
+The developed pipeline is applied to different stages of embryonic development, with segmentation models adapted to the anatomical characteristics of each stage. The resulting reconstructions are not limited to visualization: they provide three-dimensional representations that can be used to study the volume, dimensions, position, and spatial relationships of anatomical structures. The proposed approach therefore provides a basis for the quantitative analysis of embryonic anatomy and its evolution throughout development.
+
+The pipeline is exposed through a free web application with three deployment cases: reproduce specimen CS17-6521 with the project models, submit another specimen or arbitrary sections with a researcher-supplied model, or upload a raw-section archive together with its physical scale. Computation stays on Kaggle and the artefacts are published on Hugging Face.
+
+\textbf{Keywords:} serial histology, three-dimensional reconstruction, image registration, segmentation, computer vision, artificial intelligence, 3D anatomy, human embryo, embryonic development, 3D morphometry.
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\chapter*{Liste des abréviations}
+\addcontentsline{toc}{chapter}{Liste des abréviations}
+\begin{tabular}{@{}p{3.2cm}p{11cm}@{}}
+\textbf{CS} & Carnegie Stage (stade de Carnegie) \\
+\textbf{IRM} & Imagerie par Résonance Magnétique \\
+\textbf{HF} & Hugging Face (plateforme d'hébergement de jeux de données et de modèles) \\
+\textbf{LOD} & Level of Detail (niveau de détail) \\
+\textbf{MAE} & Mean Absolute Error (erreur absolue moyenne) \\
+\textbf{NCC} & Normalized Cross-Correlation (corrélation croisée normalisée) \\
+\textbf{nnU-Net} & \textit{no-new-Net}, cadre auto-configurable de segmentation \\
+\textbf{QEM} & Quadric Error Metrics \\
+\textbf{VALIS} & Virtual Alignment of pathoLogy Image Series \\
+\textbf{PFA} & Projet de Fin d'Année \\
+\end{tabular}
+
+\clearpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\chapter{Introduction}\label{ch:intro}
+
+\section{Contexte et problématique}
+
+Pendant la période embryonnaire, qui s'étend de la fécondation à la huitième semaine environ, tous les organes se mettent en place très rapidement. De nombreuses malformations congénitales trouvent leur origine dans cette période : les comprendre suppose de bien connaître l'anatomie normale à chaque étape.
+
+Cette anatomie est étudiée par l'\textbf{histologie sériée} : l'embryon est fixé, découpé en coupes très fines, colorées puis photographiées. Chaque coupe offre une excellente résolution, mais en deux dimensions seulement. L'anatomiste doit reconstituer mentalement les organes en trois dimensions, démarche longue, subjective et difficile à reproduire. La reconstruction par ordinateur vise à l'automatiser, mais elle se heurte à trois obstacles : les coupes sont mal alignées après découpe et montage, les structures sont nombreuses et très petites, et le résultat doit pouvoir servir à des mesures et être partagé facilement.
+
+La question posée est donc la suivante :
+\begin{quote}
+\textit{Comment concevoir une chaîne de traitement fiable, reproductible et réutilisable, qui transforme une série de coupes histologiques d'un embryon humain en un modèle 3D segmenté, mesurable et consultable par un chercheur, sans annoter à la main chaque nouveau spécimen ?}
+\end{quote}
+
+\section{Objectifs et contributions}
+
+L'objectif est de développer une chaîne complète allant de l'image histologique brute à un modèle 3D interactif. Les contributions sont les suivantes :
+\begin{itemize}
+    \item une \textbf{chaîne modulaire en quatre étapes} reproductibles (recalage, préparation des données, entraînement, reconstruction 3D), reliées par des fichiers versionnés et vérifiés par empreinte SHA-256 ;
+    \item une \textbf{validation quantitative du recalage} sur un cas à vérité terrain connue ;
+    \item une \textbf{segmentation par groupes équilibrés} : les 87 structures du stade Carnegie 17 (CS17) sont réparties en quatre groupes de tailles comparables, chacun doté de son propre modèle nnU-Net, pour que les grandes structures ne dominent pas l'apprentissage ;
+    \item un \textbf{format de maillages 3D compact}, à niveaux de détail multiples, adapté à l'affichage dans un navigateur ;
+    \item une \textbf{correspondance corrigée entre numéros et noms} des structures de CS17, la table fournie par l'Atlas s'étant révélée erronée ;
+    \item une \textbf{application web de déploiement} qui expose trois cas d'usage : reproduction du spécimen du projet, autre spécimen ou coupes quelconques avec un modèle du chercheur, archive de coupes brutes avec calibration physique ; le calcul est délégué à Kaggle et le stockage à Hugging Face.
+\end{itemize}
+
+\section{Organisation du rapport}
+
+Le chapitre~\ref{ch:etat} présente le contexte scientifique et les méthodes utilisées. Le chapitre~\ref{ch:data} décrit les données, l'architecture de la chaîne et les trois cas de déploiement. Les chapitres~\ref{ch:recalage}, \ref{ch:seg} et~\ref{ch:3d} détaillent respectivement le recalage, la segmentation et la reconstruction 3D, y compris la correction des noms et l'interface de déploiement. Le chapitre~\ref{ch:res} présente les résultats et les difficultés rencontrées. La conclusion dresse le bilan, les limites et les perspectives.
+
+\chapter{État de l'art}\label{ch:etat}
+
+\section{Embryon, stades de Carnegie et Atlas 3D}
+
+Le développement embryonnaire humain est décrit par les \textbf{stades de Carnegie} (CS1 à CS23), qui découpent les huit premières semaines selon l'aspect de l'embryon plutôt que son âge \cite{orahilly1987}, la vitesse de développement variant d'un embryon à l'autre. Au stade \textbf{CS17}, les bourgeons des membres sont visibles et de nombreux systèmes (vésicules cérébrales, organes sensoriels, c\oe ur) sont reconnaissables mais très petits, ce qui en fait un stade riche en structures. Le stade CS15 sert ici à valider le recalage.
+
+L'\textbf{Atlas 3D du développement humain} \cite{debakker2016}, issu de l'Amsterdam UMC, met à disposition des volumes histologiques reconstruits de plusieurs spécimens, avec des volumes de labels réalisés par des experts. Chaque volume est accompagné d'un fichier d'en-tête qui donne ses dimensions et sa boîte englobante, d'où l'on déduit la taille réelle d'un voxel.
+
+\section{Histologie sériée et IRM}
+
+L'\textbf{IRM} image l'embryon en 3D sans le détruire, mais sa résolution est insuffisante pour de nombreuses structures embryonnaires. L'\textbf{histologie sériée} offre une résolution très supérieure, mais détruit l'échantillon et fait perdre l'alignement en 3D. La reconstruction par ordinateur combine la finesse de l'histologie et la cohérence spatiale de l'IRM.
+
+\section{Recalage de coupes sérielles}
+
+Le recalage estime, pour chaque coupe, la transformation qui l'aligne sur sa voisine. Le recalage \textbf{rigide} (rotation et translation) corrige les erreurs de montage sans déformer la morphologie ; le recalage \textbf{non rigide} corrige aussi les déformations locales, mais risque de gommer la vraie forme de l'embryon. En 2D, une transformation rigide s'écrit
+\begin{equation}
+\mathbf{x}' = R(\theta)\,\mathbf{x} + \mathbf{t},
+\qquad
+R(\theta)=\begin{pmatrix}\cos\theta & -\sin\theta\\ \sin\theta & \cos\theta\end{pmatrix},
+\end{equation}
+avec $\theta$ l'angle de rotation et $\mathbf{t}$ la translation. Les transformations estimées entre coupes voisines sont enchaînées jusqu'à une coupe de référence : une erreur locale se propage donc aux coupes éloignées, d'où le choix d'une référence au milieu de la pile, qui raccourcit les chaînes.
+
+L'outil retenu est \textbf{VALIS} \cite{gatenby2023}. Il détecte des points d'intérêt (détecteur appris DISK), les apparie entre coupes voisines (algorithme LightGlue), élimine les appariements aberrants par une méthode robuste, puis estime la transformation rigide. Il fournit aussi une distance d'erreur par paire de coupes, conservée dans les rapports de la chaîne.
+
+L'alignement est mesuré par la \textbf{corrélation croisée normalisée} (NCC) entre deux images $A$ et $B$ :
+\begin{equation}
+\mathrm{NCC}(A,B)=\frac{\sum_{i}(A_i-\bar A)(B_i-\bar B)}{\sqrt{\sum_{i}(A_i-\bar A)^2\,\sum_{i}(B_i-\bar B)^2}} .
+\end{equation}
+Indépendante de la luminosité et du contraste global, elle mesure la ressemblance de structure : élevée et stable sur une pile bien alignée, elle chute en présence d'une coupe mal alignée ou abîmée. Elle sert à la fois à la validation et au contrôle qualité en production.
+
+\section{Segmentation avec nnU-Net}
+
+Les réseaux \textbf{U-Net} \cite{ronneberger2015} sont la référence en segmentation biomédicale. \textbf{nnU-Net} \cite{isensee2021} règle automatiquement prétraitement, taille des patchs, taille des lots, architecture et augmentations à partir des caractéristiques du jeu de données, ce qui permet de ré-entraîner la chaîne sur d'autres données sans expertise particulière. En configuration 2D, son plan par défaut utilise ici un patch de $1536\times896$ pixels, un lot de 2 et un réseau à 9 étages (32 à 512 canaux).
+
+La perte est la somme d'un terme de Dice et d'une entropie croisée,
+\begin{equation}
+\mathcal{L} = \mathcal{L}_{\mathrm{Dice}} + \mathcal{L}_{\mathrm{CE}},
+\qquad
+\mathcal{L}_{\mathrm{Dice}} = -\frac{2\sum_i p_i g_i}{\sum_i p_i + \sum_i g_i},
+\end{equation}
+où $p_i$ est la probabilité prédite et $g_i$ la vérité terrain au pixel $i$. Le terme de Dice étant l'opposé d'un score entre 0 et 1, la perte est négative dans les journaux d'entraînement. Cette combinaison convient au fort déséquilibre entre classes : l'entropie croisée stabilise les gradients et le Dice rend la perte sensible aux petites structures. Le taux d'apprentissage décroît selon une loi polynomiale,
+\begin{equation}
+\eta(e) = \eta_0\left(1-\frac{e}{E}\right)^{0{,}9},
+\qquad \eta_0 = 0{,}01,\quad E = 250,
+\end{equation}
+que confirment les journaux (0,0066 à l'époque 92 du groupe~0, 0,0025 à l'époque 196 du groupe~1). Pour limiter le sur-apprentissage, nnU-Net modifie les images pendant l'entraînement et force 33\,\% des patchs de chaque lot à contenir une structure, ce qui est essentiel pour les structures minuscules.
+
+La qualité est mesurée par le \textbf{coefficient de Dice} \cite{dice1945}, $\mathrm{Dice}(P,G)=2|P\cap G|/(|P|+|G|)$, entre prédiction $P$ et vérité terrain $G$. À chaque époque, nnU-Net calcule aussi un \textbf{pseudo-Dice} par classe sur les coupes de validation, lissé par moyenne mobile exponentielle. Il est calculé sur peu de coupes et sans post-traitement : il peut être nul pour une classe rare sans que le modèle soit défaillant. L'évaluation de référence du projet est donc le Dice sur des coupes réservées.
+
+\section{Génération de surfaces}
+
+L'algorithme des \textbf{marching cubes} \cite{lorensen1987} extrait d'un volume de labels une surface triangulée, mais produit des effets d'escalier. Un lissage gaussien préalable est donc appliqué en \textbf{millimètres} et non en voxels : les voxels n'étant pas cubiques (4,5~\textmu m dans le plan, 10~\textmu m selon $z$), un lissage identique en voxels déformerait les axes différemment. La surface est ensuite lissée par le filtre de \textbf{Taubin} \cite{taubin1995}, qui alterne un pas de lissage et un pas de dilatation pour supprimer le bruit sans rétrécir la structure, condition nécessaire à des mesures de volume fiables. Enfin, la \textbf{décimation par métrique d'erreur quadrique} \cite{garland1997} supprime les triangles les moins utiles en conservant la forme là où la surface est courbe, ce qui fournit les deux niveaux de détail du visualiseur.
+
+\section{Positionnement}
+
+Ce projet ne propose pas de nouvel algorithme de recalage ou de segmentation. Il \textbf{assemble, valide et rend utilisables} des méthodes éprouvées dans une chaîne destinée à des chercheurs non spécialistes du traitement d'images. L'originalité est dans l'ensemble : validation du recalage, partition équilibrée des structures, évaluation sur des coupes jamais vues, correction des noms et affichage 3D sur le web.
+
+\chapter{Données et architecture}\label{ch:data}
+
+\section{Données}
+
+Deux spécimens de l'Atlas sont utilisés (tableau~\ref{tab:specimens}).
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Spécimen} & \textbf{Stade} & \textbf{Rôle} & \textbf{Étape} \\
+\midrule
+CS15-3512 & Carnegie 15 & Validation du recalage & Recalage \\
+CS17-6521 & Carnegie 17 & Entraînement, inférence, 3D & Toutes \\
+\bottomrule
+\end{tabular}
+\caption{Spécimens de l'Atlas utilisés dans le projet.}
+\label{tab:specimens}
+\end{table}
+
+Le volume CS17-6521 est un empilement de \textbf{1059 coupes} de $1821\times1126$ pixels. Le voxel mesure \textbf{4,479~\textmu m} dans le plan et \textbf{10~\textmu m} selon $z$, soit une étendue de $5{,}04 \times 8{,}16 \times 10{,}59$~mm. Le volume gris pèse environ 1,2~Go. Les labels de l'Atlas contiennent \textbf{87 identifiants de structures}, conservés sans renumérotation du début à la fin de la chaîne. Les modèles ne manipulent que ces numéros ; les noms anatomiques sont associés ensuite par une table séparée, que l'anatomiste peut modifier sans rien recalculer.
+
+\section{Architecture de la chaîne}
+
+La chaîne comporte quatre étapes, chacune réalisée dans des notebooks Jupyter exécutés sur Kaggle (GPU ou CPU), dont la durée de session et l'espace disque sont limités. Les étapes ne communiquent que par des fichiers déposés sur \textbf{Hugging Face} (volumes recalés, jeux d'entraînement, points de contrôle des modèles, paquets de visualisation). Chaque étape peut ainsi être exécutée séparément et reprise à tout moment. Les jetons d'accès sont lus depuis les secrets Kaggle et ne figurent jamais dans le code ; les points de contrôle sont stockés dans un dépôt privé, un dossier par groupe, pour qu'un entraînement n'écrase jamais un autre. Dans le déploiement destiné aux chercheurs, l'entraînement n'est pas rejoué : seules l'acquisition/recalage et la reconstruction sont exécutées, avec un modèle déjà publié.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\node[blk,text width=3.0cm] (s1) at (1.6,0) {\textbf{1. Recalage}};
+\node[blk,text width=3.0cm] (s2) at (5.4,0) {\textbf{2. Préparation des données}};
+\node[blk,text width=3.0cm] (s3) at (9.2,0) {\textbf{3. Entraînement}};
+\node[blk,text width=3.0cm] (s4) at (13.0,0) {\textbf{4. Reconstruction 3D}};
+\node[dat,text width=3.0cm] (d1) at (1.6,-2.2) {Volume gris recalé et manifeste};
+\node[dat,text width=3.0cm] (d2) at (5.4,-2.2) {4 jeux nnU-Net};
+\node[dat,text width=3.0cm] (d3) at (9.2,-2.2) {4 modèles entraînés};
+\node[dat,text width=3.0cm] (d4) at (13.0,-2.2) {Paquet de maillages pour le web};
+\draw[ar] (s1.east)--(s2.west); \draw[ar] (s2.east)--(s3.west); \draw[ar] (s3.east)--(s4.west);
+\foreach \i in {1,2,3,4}{\draw[ar] (s\i.south)--(d\i.north);}
+\end{tikzpicture}
+\caption[Architecture de la chaîne]{Architecture de la chaîne : les quatre étapes (en haut) et les fichiers qu'elles produisent (en bas, en pointillés).}
+\label{fig:pipeline}
+\end{figure}
+
+\section{Principes de conception}
+
+\begin{itemize}
+    \item \textbf{Reproductibilité} : chaque fichier produit est accompagné d'un manifeste (forme, taille de voxel, empreinte SHA-256, paramètres), vérifié à chaque lecture.
+    \item \textbf{Absence de fuite de données} : les coupes de test sont physiquement séparées de celles d'entraînement.
+    \item \textbf{Reprise après interruption} : l'entraînement peut reprendre depuis le dernier point sauvegardé.
+    \item \textbf{Séparation segmentation / nommage} : modèles et nomenclature sont indépendants.
+\end{itemize}
+Le code repose sur Python (NumPy, SciPy, scikit-image, OpenCV), PyTorch et nnU-Net v2 pour la segmentation, VALIS pour le recalage, et un composant web de visualisation qui lit les paquets publiés.
+
+\section{Trois cas de déploiement}
+
+L'interface n'expose pas les six notebooks historiques : elle réduit le déploiement à trois cas, pour que le chercheur sache toujours quel modèle intervient et ce qu'il doit fournir (tableau~\ref{tab:deploycases}). Le premier cas reproduit le spécimen du projet avec ses quatre modèles CS17. Le deuxième accepte un autre spécimen, un autre stade ou des coupes quelconques, mais avec un modèle nnU-Net fourni par le chercheur. Le troisième est le raccourci de téléversement du deuxième : une archive de coupes brutes, accompagnée de la taille du pixel dans le plan et du pas entre coupes.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}p{4.1cm}@{}}
+\toprule
+\textbf{Cas} & \textbf{Entrée} & \textbf{Modèle} & \textbf{Fourni par le chercheur} \\
+\midrule
+1. Même spécimen & CS17-6521 : volume Atlas (\texttt{.tif + .am}) ou nouvelles coupes du même cas & les 4 modèles CS17 du projet & rien ; les dépôts du projet sont les valeurs par défaut \\
+2. Autre spécimen ou coupes quelconques & autre code Atlas, ou archive de coupes (y compris non embryonnaires) & nnU-Net v2 du chercheur & dépôt du modèle, manifeste des groupes, configuration et pli \\
+3. Téléversement & archive ZIP/TAR/RAR ou lien Hugging Face, plus XY (\textmu m/px) et Z (\textmu m/coupe) & nnU-Net v2 du chercheur & l'archive, l'échelle physique et les mêmes informations de modèle qu'au cas 2 \\
+\bottomrule
+\end{tabularx}
+\caption{Les trois cas de déploiement exposés par l'application web.}
+\label{tab:deploycases}
+\end{table}
+
+Le cas 2 accepte donc \emph{n'importe quelles} coupes, et pas seulement un volume de l'Atlas : le pipeline ne suppose pas que l'image soit un embryon, il segmente ce que le modèle fourni prédit. Les noms et les couleurs des structures sont lus dans un fichier \texttt{names.json} propre au paquet ; les nombres du projet (4 groupes, Dice CS17) ne sont affichés que pour CS17-6521 ou lorsqu'un fichier \texttt{project.json} les remplace.
+
+Le cas 3 est le chemin de téléversement du cas 2. Le serveur reçoit l'archive, la pousse sur Hugging Face par \texttt{POST /api/uploads}, puis transmet l'URL au notebook ; l'archive est supprimée du disque du serveur. Les liens Hugging Face privés sont lus avec le jeton du serveur. Une archive locale n'est acceptée qu'avec le moteur local : un noyau Kaggle ne voit pas le disque du serveur.
+
+Un modèle du chercheur n'est pas obligé de reproduire les quatre groupes de CS17. Le notebook de reconstruction découvre les dossiers de groupes, les identifiants \texttt{Dataset7xx}, les noms de jeux et la taille du voxel à partir du dépôt et du manifeste. En revanche, la configuration et le pli doivent correspondre aux points de contrôle publiés, et la plage de normalisation doit être celle de l'entraînement. Le manifeste doit être complet : le raccourci \texttt{groups: [0, 1, 2, 3]} est rejeté, car il est ambigu et incluait le fond 0 comme structure.
+
+\chapter{Recalage des coupes}\label{ch:recalage}
+
+Cette étape comprend une \textbf{validation expérimentale} sur le spécimen CS15-3512, puis le \textbf{pipeline de production}.
+
+\section{Validation expérimentale}
+
+\subsection{Protocole}
+
+Pour prouver que la configuration de recalage fonctionne, on la compare à une référence connue. À partir du volume déjà aligné CS15-3512, qui sert de vérité terrain, on prélève cinq coupes consécutives (indices 323 à 327) et on applique à chacune une rotation et une translation \textbf{connues} (tableau~\ref{tab:resA}). Elles sont ensuite recalées par VALIS avec la \textbf{configuration rigide utilisée en production}, puis comparées à la vérité terrain par l'\textbf{erreur absolue moyenne} (MAE) et la NCC. Un recalage réussi doit diminuer la MAE et augmenter la NCC par rapport à l'état perturbé.
+
+\begin{table}[H]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{ccccccc}
+\toprule
+\textbf{Coupe} & \textbf{Rot. ($^\circ$)} & \textbf{Transl. (px)} & \textbf{MAE avant} & \textbf{MAE après} & \textbf{NCC avant} & \textbf{NCC après} \\
+\midrule
+323 & $-4{,}0$ & $(-12;\,10)$ & 20,101 & 21,317 & 0,5423 & 0,5210 \\
+324 & $-2{,}0$ & $(-6;\,-7)$ & 17,220 & 14,371 & 0,6407 & 0,6862 \\
+325 (réf.) & $0{,}0$ & $(0;\,0)$ & 0,000 & 0,000 & 1,0000 & 1,0000 \\
+326 & $2{,}5$ & $(8;\,5)$ & 17,692 & 14,729 & 0,6083 & 0,6643 \\
+327 & $4{,}0$ & $(14;\,-10)$ & 19,230 & 20,280 & 0,5326 & 0,5189 \\
+\midrule
+\textbf{Médiane} & & & 17,692 & 14,729 & 0,6083 & 0,6643 \\
+\bottomrule
+\end{tabular}
+\caption[Validation du recalage (MAE et NCC)]{Validation du recalage : perturbation (rotation, translation en pixels), MAE et NCC avant et après.}
+\label{tab:resA}
+\end{table}
+
+\subsection{Résultats}
+
+La MAE médiane passe de 17,69 à 14,73 (environ 17\,\% de réduction) et la NCC médiane de 0,608 à 0,664. Mais le recalage n'améliore les deux mesures que sur \textbf{deux coupes sur cinq} (324 et 326), qui ont subi des déplacements modérés ($\pm 2^\circ$ à $2{,}5^\circ$). Pour les deux coupes les plus déplacées (323 et 327, rotations de $\pm 4^\circ$ et translations jusqu'à 14 pixels), les mesures se dégradent légèrement. Le déplacement connu n'est donc retrouvé que partiellement.
+
+Une partie de cette dégradation peut venir du mode de calcul : la rotation laisse des zones noires dans les angles des coupes recalées (figure~\ref{fig:regcomp}), alors que le fond des images originales est blanc. Si les métriques portent sur l'image entière, ces zones ajoutent une erreur même quand l'embryon est bien aligné. Un calcul limité à la zone valide permettrait de le vérifier.
+
+\safeimg{registration_comparison.jpg}{0.95\textwidth}{Validation du recalage pour les coupes 323 à 327 : coupes originales (haut), perturbées (milieu) et recalées par VALIS (bas). Les zones noires aux angles proviennent de la rotation ; elles ne font pas partie du tissu.}{fig:regcomp}{Recalage VALIS : coupes 323 à 327}
+
+\subsection{Portée}
+
+L'expérience montre que VALIS corrige bien des déplacements rigides modérés sur du matériel embryonnaire, et moins bien des déplacements plus importants. Elle \textbf{ne prouve pas} une fiabilité identique sur toute série : celle-ci dépend de la coloration, de l'état du tissu, des plis et des déchirures. C'est une calibration de la méthode, non une garantie générale.
+
+\section{Pipeline de production}
+
+Le pipeline accepte deux types de sources (figure~\ref{fig:prod}). Un \textbf{volume déjà assemblé} au format de l'Atlas est considéré comme ordonné et aligné : sa calibration est lue dans l'en-tête et le recalage est ignoré. Une \textbf{archive de coupes brutes} (JPEG, PNG, TIFF, BMP) est triée par numéro et recalée par VALIS ; le chercheur doit fournir la taille du pixel dans le plan et le pas entre coupes. C'est ce second cas qui permet à un chercheur de soumettre ses propres coupes (section~\ref{sec:interface}).
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\node[blk,text width=2.0cm] (in) at (1.25,0) {Entrée de la chaîne};
+\node[blk] (atl) at (4.6,1.6) {Volume déjà assemblé (format Atlas)};
+\node[blk] (skip) at (8.0,1.6) {Recalage ignoré ; calibration lue dans l'en-tête};
+\node[blk] (raw) at (4.6,-1.6) {Coupes brutes (archive ou dossier)};
+\node[wrn] (val) at (8.0,-1.6) {Tri numérique et calibration fournie};
+\node[blk] (valis) at (12.9,-1.6) {Recalage rigide VALIS};
+\node[res] (out) at (12.9,0) {Volume gris calibré, manifeste et contrôle qualité};
+\draw[ar] (in.east) -- ++(0.5,0) |- (atl.west); \draw[ar] (in.east) -- ++(0.5,0) |- (raw.west);
+\draw[ar] (atl.east)--(skip.west); \draw[ar] (raw.east)--(val.west); \draw[ar] (val.east)--(valis.west);
+\draw[ar] (skip.east) -| (out.north); \draw[ar] (valis.north)--(out.south);
+\end{tikzpicture}
+\caption[Pipeline de production]{Pipeline de production : deux types d'entrée mènent à un même volume gris calibré.}
+\label{fig:prod}
+\end{figure}
+
+Les principales étapes sont les suivantes :
+\begin{enumerate}
+    \item \textbf{Acquisition} : pour l'en-tête de l'Atlas, seuls les 2 premiers Mo sont lus par une requête partielle, au lieu du fichier complet d'environ 0,9~Go.
+    \item \textbf{Recalage} : la décision de recaler peut être forcée, désactivée ou prise automatiquement sur un échantillon de coupes. VALIS s'exécute dans un \textbf{environnement virtuel isolé}, pour ne pas perturber les bibliothèques de Kaggle.
+    \item \textbf{Calibration} : la taille du voxel est calculée, puis un contrôle vérifie que la plus grande longueur de l'embryon reste entre 7 et 9~mm, ce qui détecte une erreur d'unités.
+    \item \textbf{Contrôle qualité} : calcul de la NCC entre coupes consécutives, planche-contact et manifeste (forme, voxel, empreinte, statistiques de recalage).
+    \item \textbf{Publication} : envoi sur Hugging Face, puis export de chaque coupe en image WebP, avec une fenêtre d'intensité identique pour toutes. Le visualiseur affiche ainsi la coupe sous le curseur par une simple requête d'environ 100 à 200~Ko, sans lire un fichier de plusieurs centaines de mégaoctets.
+\end{enumerate}
+
+Le recalage non rigide corrige plus de défauts mais risque de déformer des structures réelles pour les rendre plus cohérentes. La production utilise donc par défaut le \textbf{recalage rigide}, conformément à la validation ; le recalage non rigide n'est activé que sur demande explicite.
+
+\chapter{Segmentation}\label{ch:seg}
+
+\section{Préparation des jeux d'entraînement}
+
+\subsection{Partition en groupes équilibrés}
+
+Entraîner un seul modèle sur 87 classes très déséquilibrées est défavorable : les grandes structures dominent la perte et les petites sont ignorées. Les 87 structures sont donc réparties en quatre groupes d'environ 22 structures, chacun avec son propre modèle. Aucune structure n'est écartée, et chacune appartient à un seul groupe. Pour chaque partition possible, trois indicateurs sont calculés : le nombre de classes, le rapport de taille entre la plus grande et la plus petite classe d'un groupe, et la part des pixels détenue par la classe dominante.
+
+Deux stratégies sont comparées. La stratégie \textbf{retenue} trie les structures par taille et les découpe en blocs consécutifs, si bien que chaque groupe réunit des structures de tailles proches. La stratégie alternative répartit les structures en alternance pour égaliser le nombre total de pixels, mais mélange des structures de tailles très différentes : le rapport de tailles y atteint plus de 100\,000 et la classe dominante détient de 38,3 à 93,7\,\% des pixels de son groupe. Avec la stratégie retenue, ce rapport reste compris entre 3,7 et 56,7 pour les groupes~1 à~3. Seul le groupe~0, qui contient les plus grandes structures, a un rapport élevé (301,1) et une classe dominante (56,2\,\%).
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{>{\centering\arraybackslash}p{1.2cm}*{6}{>{\centering\arraybackslash}p{1.9cm}}}
+\toprule
+\textbf{Groupe} & \textbf{Classes} & \textbf{Pixels (\%)} & \textbf{Rapport de tailles} & \textbf{Classe dominante (\%)} & \textbf{Coupes d'entraînement} & \textbf{Coupes réservées} \\
+\midrule
+0 & 21 & 97,4 & 301,1 & 56,2 & 845 & 211 \\
+1 & 22 & 2,1 & 3,7 & 8,5 & 615 & 153 \\
+2 & 22 & 0,5 & 5,2 & 9,7 & 697 & 174 \\
+3 & 22 & 0,1 & 56,7 & 11,1 & 432 & 108 \\
+\bottomrule
+\end{tabular}
+\caption{Répartition des 87 structures en quatre groupes.}
+\label{tab:groups}
+\end{table}
+
+\subsection{Normalisation et construction des jeux}
+
+Les intensités sont normalisées avec \textbf{une seule plage de percentiles calculée sur tout le volume} et appliquée à toutes les coupes et à tous les groupes, pour que la luminosité garde le même sens partout. Copier le volume en nombres flottants dépasserait la mémoire disponible : la plage est estimée sur un sous-échantillon aléatoire de plusieurs dizaines de millions de voxels, statistiquement suffisant. La même plage est réutilisée à l'inférence, ce qui garantit une normalisation identique à l'entraînement et à la prédiction.
+
+Pour chaque groupe, les identifiants de l'Atlas sont convertis en identifiants consécutifs ($0$ pour le fond, $1\ldots k$ pour les structures), une séparation entre coupes d'entraînement et coupes réservées est décidée avec une graine fixe, et un contrôle vérifie l'absence de fuite avant publication. Un manifeste global liste les quatre groupes et sert de référence unique : une seule variable désigne le groupe à entraîner, et un même notebook entraîne donc les quatre modèles.
+
+\subsection{Une leçon : la fuite de données}
+
+Dans une première version, les coupes à réserver restaient dans les dossiers d'entraînement, et un simple manifeste indiquait de les ignorer. Or nnU-Net ignore ce manifeste : il utilisait ces coupes pour sa planification, son prétraitement et sa validation croisée, ce qui faussait l'évaluation. La version finale \textbf{retire physiquement} les coupes réservées du jeu d'entraînement, si bien qu'elles sont réellement invisibles pour nnU-Net.
+
+\section{Entraînement}
+
+\subsection{Configuration et robustesse}
+
+Chaque modèle est entraîné avec nnU-Net v2 en configuration 2D, sur un \textbf{seul pli} et pour \textbf{250 époques}, au lieu d'un ensemble de cinq plis, par manque de temps GPU (limite discutée en conclusion). Les sessions Kaggle étant limitées, plusieurs mécanismes garantissent la continuité :
+\begin{itemize}
+    \item restauration automatique du dernier état depuis Hugging Face au démarrage ;
+    \item sauvegarde d'un point de contrôle toutes les 5 époques au lieu de 50 (groupes~1 à~3 ; le groupe~0, entraîné avec une version antérieure, conserve l'intervalle par défaut) ;
+    \item envoi de l'état complet vers Hugging Face toutes les 15 minutes (30 pour le groupe~0), en ignorant tout fichier en cours d'écriture pour ne jamais envoyer un point corrompu ;
+    \item nettoyage automatique des fichiers de validation inutiles au modèle en cas de disque saturé.
+\end{itemize}
+
+\subsection{Plan à petit patch pour les groupes 2 et 3}
+
+Avec le plan par défaut, le patch ($1536\times896$ pour une coupe de $1821\times1126$) couvre environ 67\,\% de la coupe, et les structures minuscules n'y occupent qu'une très petite part. Pour les groupes~2 et~3, un plan personnalisé (\textit{smallpatch}) utilise un patch de $512\times512$ (environ 13\,\% de la coupe) et un lot de 10, soit un nombre de pixels par itération comparable (2,6 contre 2,8 millions) et donc une mémoire GPU comparable. Le groupe~2, dont le pseudo-Dice restait nul après 40 époques avec le plan par défaut, a été \textbf{ré-entraîné depuis zéro} avec ce plan, car un changement de plan crée un nouveau dossier de résultats. Les groupes~0 et~1 utilisent le plan par défaut.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+ & \textbf{Groupe 0} & \textbf{Groupe 1} & \textbf{Groupe 2} & \textbf{Groupe 3} \\
+\midrule
+Plan & par défaut & par défaut & défaut, puis \textit{smallpatch} & \textit{smallpatch} \\
+Époques effectuées & 97 & 201 & 40 + 237 & 250 \\
+Objectif & 250 & 250 & 250 & 250 \\
+Entraînement terminé & non & non & non & oui \\
+\bottomrule
+\end{tabular}
+\caption[Avancement de l'entraînement]{État de l'entraînement de chaque groupe au moment de l'inférence.}
+\label{tab:trainstate}
+\end{table}
+
+Seul le groupe~3 a atteint les 250 époques. Le groupe~0 a été arrêté manuellement et les groupes~1 et~2 n'ont pas terminé : pour ces trois groupes, l'inférence utilise le meilleur point de contrôle disponible. Leurs performances sont celles de modèles intermédiaires.
+
+\section{Protocole d'évaluation}
+
+L'évaluation sur \textbf{coupes réservées} est la mesure principale de qualité. Ces coupes n'ont jamais servi à l'entraînement et sont prédites par le pipeline complet de nnU-Net. Le Dice est calculé par classe et par coupe ; une classe absente à la fois de la vérité terrain et de la prédiction n'est pas comptée. Des superpositions colorées sur l'image histologique permettent un contrôle visuel.
+
+La portée de cette évaluation est limitée : les coupes réservées proviennent du \textbf{même spécimen} (CS17-6521) que celles d'entraînement. Comme les coupes voisines se ressemblent, elle protège contre le sur-apprentissage au niveau des coupes mais \textbf{ne mesure pas la généralisation à un autre spécimen}.
+
+\chapter{Reconstruction 3D}\label{ch:3d}
+
+Cette étape prend le volume recalé et les quatre modèles, et produit un paquet léger pour le visualiseur web. Les structures y sont identifiées uniquement par leur numéro.
+
+\section{Inférence et fusion}
+
+Le volume est téléchargé et son empreinte vérifiée. Chaque coupe est exportée avec la même formule de normalisation qu'à l'entraînement, puis chaque groupe prédit ses structures avec son point de contrôle final ou, à défaut, le meilleur. Les prédictions sont mises en cache pour ne pas être recalculées. Les quatre sorties sont ensuite fusionnées en un seul volume de labels (figure~\ref{fig:fusion}) :
+\begin{itemize}
+    \item \textbf{conversion des numéros} locaux de chaque groupe en numéros de l'Atlas, avec vérification croisée par les noms de classes ;
+    \item \textbf{réduction de taille par couverture} : un label est conservé dans un bloc si la part de pixels qu'il y occupe dépasse un seuil, ce qui préserve les structures fines et évite l'escalier ;
+    \item \textbf{résolution des conflits} : si deux groupes prédisent le même voxel, le groupe aux structures les plus petites passe en dernier, au-dessus, pour qu'une grande structure englobante n'efface pas une petite ;
+    \item \textbf{stockage compact} en entiers sur 8 bits, suffisants pour 87 identifiants.
+\end{itemize}
+Un contrôle final compte combien des 87 structures attendues ont été prédites, liste les absentes et affiche les plus petites.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\node[dat,minimum height=0.9cm] (g0) at (1.3,1.8) {Groupe 0};
+\node[dat,minimum height=0.9cm] (g1) at (1.3,0.6) {Groupe 1};
+\node[dat,minimum height=0.9cm] (g2) at (1.3,-0.6) {Groupe 2};
+\node[dat,minimum height=0.9cm] (g3) at (1.3,-1.8) {Groupe 3};
+\node[blk,minimum height=4.3cm] (lut) at (5.2,0) {Conversion des numéros locaux en numéros de l'Atlas};
+\node[blk] (cov) at (8.9,0) {Réduction de taille par couverture};
+\node[blk] (pri) at (12.6,0) {Peinture : petites structures au-dessus};
+\node[res] (out) at (12.6,-2.4) {Volume de labels unique (87 numéros)};
+\foreach \g in {g0,g1,g2,g3}{\draw[ar] (\g.east) -- (lut.west |- \g.east);}
+\draw[ar] (lut.east)--(cov.west); \draw[ar] (cov.east)--(pri.west); \draw[ar] (pri.south)--(out.north);
+\end{tikzpicture}
+\caption[Fusion des prédictions]{Fusion des prédictions des quatre groupes en un volume de labels unique.}
+\label{fig:fusion}
+\end{figure}
+
+\section{Génération des maillages}
+
+Chaque structure suit la chaîne de la figure~\ref{fig:meshchain}, en coordonnées \textbf{physiques} (millimètres) tirées de la taille du voxel, de sorte que les maillages ont les dimensions réelles de l'embryon, ce qui est nécessaire à toute mesure.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\node[blk] (m1) at (1.3,0) {1. Recadrage sur la boîte englobante};
+\node[blk] (m2) at (4.9,0) {2. Composantes réelles et remplissage des trous};
+\node[blk] (m3) at (8.5,0) {3. Lissage gaussien en échelle physique};
+\node[blk] (m4) at (12.1,0) {4. Marching cubes};
+\node[blk] (m5) at (12.1,-2.4) {5. Lissage de Taubin};
+\node[blk] (m6) at (8.5,-2.4) {6. Décimation en deux niveaux de détail};
+\node[blk] (m7) at (4.9,-2.4) {7. Occlusion ambiante par sommet};
+\node[res] (m8) at (1.3,-2.4) {Maillage prêt à être empaqueté};
+\draw[ar] (m1.east)--(m2.west); \draw[ar] (m2.east)--(m3.west); \draw[ar] (m3.east)--(m4.west); \draw[ar] (m4.south)--(m5.north);
+\draw[ar] (m5.west)--(m6.east); \draw[ar] (m6.west)--(m7.east); \draw[ar] (m7.west)--(m8.east);
+\end{tikzpicture}
+\caption{Chaîne de génération du maillage de chaque structure.}
+\label{fig:meshchain}
+\end{figure}
+
+\section{Paquet pour le web}
+
+Le résultat est un paquet de trois éléments (tableau~\ref{tab:pack}). Les coordonnées sont codées sur 16 bits, enregistrées sous forme de différences successives, puis compressées, ce qui réduit fortement le poids. Les niveaux grossiers sont placés en premier : l'embryon entier s'affiche dès leur arrivée, puis les niveaux fins suivent, des plus gros aux plus petits. Le poids final se règle par un budget de triangles. Une structure trop petite ou trop fine n'a simplement pas de maillage.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{4.3cm}p{10cm}}
+\toprule
+\textbf{Élément} & \textbf{Rôle} \\
+\midrule
+Maillages & Fichier binaire compressé contenant toutes les structures, niveaux grossiers en tête \\
+Description du paquet & Liste des structures, positions dans le fichier et boîte englobante \\
+Table des noms & Association numéro $\rightarrow$ nom (et couleur, groupe anatomique), \textbf{modifiable sans régénérer les maillages} et jamais écrasée lors d'une nouvelle publication, pour protéger le travail de l'anatomiste \\
+\bottomrule
+\end{tabular}
+\caption{Contenu du paquet de visualisation.}
+\label{tab:pack}
+\end{table}
+
+\section{Correction des noms de CS17}
+
+Dans l'Atlas, un fichier associe chaque numéro de structure à un nom anatomique. Pour CS17, ce fichier est \textbf{erroné} : \textbf{aucun des 87 numéros} ne portait le nom de la structure qu'il désigne. L'erreur a été détectée par l'encadrante, qui, en examinant le modèle 3D produit par la chaîne, a constaté que les noms affichés ne correspondaient pas à l'anatomie. Elle touche la nomenclature et non la segmentation : les voxels sont bien regroupés par numéro. Elle est néanmoins grave, car toute mesure rapportée à une structure nommée (volume, position, relations spatiales) serait attribuée à la mauvaise structure.
+
+Les modèles n'utilisant que des numéros, les segmentations, prédictions et maillages restent valides et aucun ré-entraînement n'est nécessaire. La correction suit quatre étapes :
+\begin{enumerate}
+    \item génération du modèle 3D de CS17 par la chaîne, chaque structure étant identifiée par son numéro ;
+    \item examen anatomique de ce modèle par l'encadrante ;
+    \item comparaison avec un \textbf{modèle 3D de référence} pour déterminer la structure que désigne réellement chaque numéro ;
+    \item construction d'une \textbf{nouvelle table de 87 noms}, entièrement différente de celle de l'Atlas, publiée dans la table des noms du paquet.
+\end{enumerate}
+La table n'a donc pas été corrigée en partie : elle a été entièrement reconstruite. L'épisode montre que la fiabilité d'une chaîne de reconstruction dépend aussi de la qualité des métadonnées, et que séparer numéros et noms permet de corriger une erreur sans rien recalculer.
+
+\section{Interface pour chercheurs}\label{sec:interface}
+
+L'interface n'est plus une perspective : elle est déployée à l'adresse \url{https://pfa-embryo-3d.onrender.com} sous la forme d'une application FastAPI dans un conteneur Docker sur l'offre gratuite de Render (figure~\ref{fig:interfaceform}). Le navigateur ne fait que remplir un formulaire ; le serveur valide le \emph{spec}, pousse les notebooks sur Kaggle par l'API et suit leur état ; Hugging Face transporte les volumes, les modèles et les paquets, et le visualiseur lit directement les artefacts publiés. Aucun calcul lourd ne tourne sur le serveur web.
+
+\safeimg{screenshots/form.png}{0.92\textwidth}{Formulaire de lancement de l'application déployée. Les trois cas sont sélectionnables en haut ; le modèle, l'entrée et la calibration sont validés avant l'envoi sur Kaggle.}{fig:interfaceform}{Formulaire de l'application déployée}
+
+Le formulaire produit le même fichier YAML que la ligne de commande. Ce spec contient le spécimen, le format d'entrée, les dépôts Hugging Face, le modèle, la configuration et le pli, la reconstruction et le moteur d'exécution ; il est enregistré à côté des notebooks exécutés, ce qui rend chaque lancement reproductible. Le bouton \textbf{Plan} affiche les étapes et le YAML sans rien exécuter ; \textbf{Run} pousse les noyaux et affiche l'état, le journal et le lien du visualiseur.
+
+\subsection{Audit de généralisation des notebooks}
+
+Avant de réduire l'interface à trois cas, les notebooks ont été relus pour vérifier ce qui était déjà générique. Le constat est mitigé. La registration accepte déjà plusieurs formats d'archive (ZIP, TAR, RAR), les liens de fichiers ou de jeux Hugging Face, les identifiants de spécimen arbitraires et les tailles physiques en micromètres. La reconstruction sait déjà découvrir un dépôt de modèles personnalisé, lire un manifeste de groupes, convertir un nombre quelconque de groupes et de classes, et utiliser la taille de voxel du manifeste pour produire des maillages en millimètres. En revanche, plusieurs constantes du projet CS17 empêchaient un autre cas de fonctionner sans modification manuelle (tableau~\ref{tab:generality}).
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.1cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{5.4cm}@{}}
+\toprule
+\textbf{Point bloquant} & \textbf{État initial} & \textbf{Correction apportée} \\
+\midrule
+Configuration et pli & \texttt{2d} et \texttt{fold 0} écrits en dur dans la découverte des dossiers et l'appel \texttt{nnUNetv2\_predict} & paramètres \texttt{MODEL\_CONFIGURATION} et \texttt{MODEL\_FOLD}, utilisés pour trouver \texttt{fold\_N} et lancer la prédiction \\
+Groupes & raccourci \texttt{[0,1,2,3]} ambigu, qui traitait le fond 0 comme une structure & manifeste complet obligatoire, validé côté serveur ; repli lecture seule depuis les \texttt{dataset.json} des points de contrôle \\
+Nom des fichiers Atlas & suffixe \texttt{v2016-01} supposé & sondage de \texttt{v2016-01}, \texttt{v2016-02} et \texttt{v2016-03} ; testé sur CS17, CS12, CS15 et CS09 \\
+Titres et chiffres du projet & titre, quatre groupes et Dice CS17 affichés pour tout spécimen & titre du paquet, \texttt{names.json} et \texttt{project.json} ; chiffres du projet seulement pour CS17 ou surcharge explicite \\
+Groupes, jeux et voxel & quatre groupes, \texttt{Dataset7xx} et voxel CS17 supposés & découverte du nombre de groupes, des identifiants et du voxel dans le dépôt et le manifeste \\
+Archive locale & \texttt{local\_archive} proposé même avec le moteur Kaggle & rejet sur Kaggle ; téléversement \texttt{POST /api/uploads} ou lien Hugging Face \\
+Modèle du chercheur & aucun chemin dans le formulaire pour fournir un modèle & \texttt{MODEL\_REPO}, manifeste, configuration et pli exposés dans les cas 2 et 3 \\
+\bottomrule
+\end{tabularx}
+\caption{Constantes CS17 identifiées dans les notebooks et corrections de généralisation.}
+\label{tab:generality}
+\end{table}
+
+Après correction, le cas 2 accepte un autre spécimen, un autre stade ou des coupes quelconques, y compris non embryonnaires, à condition que le modèle du chercheur ait été entraîné pour ces images. Le cas 3 ajoute seulement le téléversement et l'échelle physique. Le cas 1 conserve les modèles du projet et retrouve le manifeste des quatre groupes même si le dépôt du jeu d'entraînement est privé ou absent : les \texttt{dataset.json} publiés avec les points de contrôle contiennent déjà la correspondance entre noms de classes et identifiants de l'Atlas, et la plage de normalisation CS17 est appliquée. Ce repli ne remplace pas un manifeste pour un modèle inconnu ; il évite seulement de bloquer la reproduction du projet.
+
+La généralisation a toutefois des limites qu'il faut expliciter. Un modèle entraîné sur CS17 ne segmente pas correctement un autre stade ou un autre tissu : le formulaire ne réentraîne rien, il exige un modèle adapté. La qualité du recalage dépend de la coloration, des plis et des déchirures, et n'a été validée que sur cinq coupes de CS15. Enfin, aucun résultat quantitatif n'est fourni pour les cas 2 et 3 : l'interface les rend exécutables, elle ne prouve pas leur exactitude anatomique. Ces points restent des perspectives de validation, pas des fonctionnalités cachées.
+
+\subsection{Déploiement et exploitation}
+
+Le service tient sur l'offre gratuite : Render endort le conteneur après environ quinze minutes sans trafic et son disque est éphémère. L'état de chaque lancement est donc recopié dans \texttt{runs/<id>/state.json} sur Hugging Face, et le serveur reprend un lancement interrompu au lieu de le perdre ; un noyau Kaggle déjà en cours est adopté plutôt que dupliqué. Après chaque \texttt{git push}, le service public doit être redéployé manuellement par \textbf{Manual Deploy} puis \textbf{Deploy latest commit} ; la route \texttt{/api/version} permet de vérifier le numéro de version et le commit réellement servis.
+
+\chapter{Résultats et discussion}\label{ch:res}
+
+\section{Performances de segmentation}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{>{\centering\arraybackslash}p{1.4cm}>{\centering\arraybackslash}p{2.5cm}*{4}{>{\centering\arraybackslash}p{1.95cm}}}
+\toprule
+\textbf{Groupe} & \textbf{Époques effectuées} & \textbf{Pseudo-Dice EMA} & \textbf{Classes évaluées} & \textbf{Dice moyen} & \textbf{Dice médian} \\
+\midrule
+0 & 97 (arrêt manuel) & 0,905 & 21 / 21 & 0,834 & 0,925 \\
+1 & 201 & 0,903 & 22 / 22 & 0,837 & 0,897 \\
+2 & 40 + 237 & 0,793 & 22 / 22 & 0,807 & 0,891 \\
+3 & 250 & 0,712 & 21 / 22 & 0,746 & 0,866 \\
+\midrule
+\textbf{Ensemble} & & & 86 / 87 & \textbf{0,826} & \\
+\bottomrule
+\end{tabular}
+\caption[Performances par groupe]{Performances par groupe : meilleur pseudo-Dice EMA et Dice sur coupes réservées.}
+\label{tab:dice}
+\end{table}
+
+Le \textbf{Dice moyen} est calculé sur les coupes réservées, jamais vues à l'entraînement : c'est la moyenne sur toutes les classes et toutes les coupes où la structure est présente dans la vérité terrain ou dans la prédiction. Il s'appuie sur le meilleur point de contrôle pour les groupes~0 à~2 (inachevés) et sur le point final pour le groupe~3. Le \textbf{Dice moyen global est de 0,826}. Le détail par classe figure en annexe.
+
+Les performances dépendent moins de l'avancement de l'entraînement que de la \emph{taille des structures}. Les groupes~0 et~1, pourtant inachevés, atteignent 0,83 à 0,84 car ils regroupent les plus grandes structures, tandis que les groupes~2 (0,81) et surtout~3 (0,75) rassemblent les plus petites et sont plus difficiles, même avec un entraînement complet pour le groupe~3.
+
+Dans chaque groupe, le Dice \emph{médian} (0,87 à 0,93) dépasse nettement le Dice \emph{moyen} : la plupart des coupes sont très bien segmentées et un petit nombre d'échecs (Dice proche de 0) fait baisser la moyenne. La moyenne par classe, qui donne le même poids à chaque structure (0,80 ; 0,84 ; 0,77 ; 0,72 pour les groupes~0 à~3), est inférieure à la moyenne par coupe pour le groupe~0 (0,802 contre 0,834) : les grandes structures, très bien segmentées, relèvent le score global.
+
+\section{Analyse par groupe}
+
+Le nombre de coupes réservées par classe est déterminant pour interpréter les scores : un seul échec sur une classe évaluée sur 4 coupes divise sa moyenne par deux.
+\begin{itemize}
+    \item \textbf{Groupe 0} : les trois structures présentes sur plus de 200 coupes obtiennent les meilleurs scores (identifiants 76, 1 et 45 : 0,97, 0,96 et 0,96). La structure~10 est le cas le plus préoccupant (moyenne 0,46, médiane nulle sur 31 coupes), ce qui indique un échec systématique ; les structures 73 et 70 sont moyennes (0,66 et 0,68).
+    \item \textbf{Groupe 1} : le plus homogène (0,837), de 0,65 (structure~71) à 0,95 (structure~79). Ses scores sont proches de ceux du groupe~0 mais les structures diffèrent, ce qui interdit de conclure sur une saturation de l'apprentissage.
+    \item \textbf{Groupe 2} : la plus grande dispersion, de 0,57 (structure~46) à 0,95 (structure~47). Les structures 46, 74 et 63, évaluées sur 6 à 10 coupes, sont peu fiables. La structure~31, évaluée sur 45 coupes, atteint seulement 0,62 (médiane 0,67) : cette faiblesse est réelle et régulière, et c'est le principal candidat à une amélioration ciblée.
+    \item \textbf{Groupe 3} : il contient les plus petites structures (de l'ordre de 1\,000 à 60\,000 pixels au total). Six classes sont évaluées sur moins de 6 coupes. La structure~78 est la seule dont le Dice reste très bas (0,14, médiane nulle sur 6 coupes).
+\end{itemize}
+
+Le journal d'entraînement du groupe~2 affiche un pseudo-Dice nul pour la structure~22 pendant de nombreuses époques, alors que cette structure atteint 0,86 sur les coupes réservées : le pseudo-Dice, calculé sur peu de coupes, est peu fiable pour les classes rares. La structure~7 (groupe~3) n'est pas prédite et n'apparaît pas dans les coupes réservées ; elle est probablement trop petite ou trop rare pour être apprise, ce qui reste à vérifier en comptant ses coupes d'entraînement. Pour les structures~10 et~78, plusieurs causes sont possibles (faible contraste, forme fine, peu de coupes, erreurs d'annotation), mais les données ne permettent pas de trancher ; la première étape recommandée est d'examiner les superpositions. Enfin, le Dice est calculé coupe par coupe : une structure peut présenter des discontinuités une fois les coupes empilées, ce qu'un Dice en 3D mesurerait, mais il exigerait une vérité terrain 3D complète qui n'existe pas pour des coupes isolées.
+
+\section{Courbes d'apprentissage}
+
+Les figures~\ref{fig:prog01} et~\ref{fig:prog23} présentent les courbes produites par nnU-Net pour chaque groupe.
+
+\begin{figure}[H]
+\centering
+\progimg{progress_group0.jpg}{Groupe 0 (97 époques)}
+\hfill
+\progimg{progress_group1.jpg}{Groupe 1 (201 époques)}
+\caption[Courbes d'apprentissage des groupes 0 et 1]{Courbes d'apprentissage des groupes~0 et~1 : pertes, pseudo-Dice, durée des époques et taux d'apprentissage.}
+\label{fig:prog01}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\progimg{progress_group2.jpg}{Groupe 2 (\textit{smallpatch}, 237 époques)}
+\hfill
+\progimg{progress_group3.jpg}{Groupe 3 (250 époques)}
+\caption[Courbes d'apprentissage des groupes 2 et 3]{Courbes d'apprentissage des groupes~2 et~3.}
+\label{fig:prog23}
+\end{figure}
+
+\paragraph{Groupe 3 (entraînement complet).} L'apprentissage est sain : la perte d'entraînement passe d'environ $-0{,}33$ à $-0{,}52$ et celle de validation la suit de près ($-0{,}50$), donc peu de sur-apprentissage. Le pseudo-Dice reste nul une quinzaine d'époques puis monte jusqu'à environ 0,71, et la courbe lissée monte encore légèrement à la fin : un entraînement plus long apporterait un petit gain. Une époque dure environ 135 secondes, soit près de 9 heures et demie au total.
+
+\paragraph{Groupe 0.} La perte passe d'environ $1{,}1$ à $-0{,}42$ et le pseudo-Dice de 0,07 à 0,90 en une soixantaine d'époques ; la courbe lissée est presque plate à l'arrêt (167 secondes par époque, la durée la plus élevée). Le taux d'apprentissage valait encore 65\,\% de sa valeur initiale.
+
+\paragraph{Groupe 1.} Le pseudo-Dice reste nul une dizaine d'époques, augmente brutalement entre les époques 30 et 45 puis se stabilise vers 0,90, sans signe net de sur-apprentissage (134 secondes par époque).
+
+\paragraph{Groupe 2.} Le pseudo-Dice reste nul environ 25 époques, croît entre les époques 35 et 90 puis atteint 0,79 en progressant encore lentement : c'est le groupe qui aurait le plus à gagner d'un entraînement jusqu'à 250 époques. Un pic isolé de durée d'époque vers l'époque 117 correspond à une interruption de session suivie d'une reprise ; les courbes de perte et de pseudo-Dice ne montrent aucune discontinuité, ce qui confirme que la reprise préserve l'état de l'entraînement.
+
+\section{Effet du plan d'entraînement}
+
+Pour le groupe~2, le passage au plan à petit patch a coïncidé avec une nette amélioration : pseudo-Dice nul avec le plan par défaut, Dice de 0,81 sur les coupes réservées avec \textit{smallpatch}. L'explication attendue est qu'un petit patch centré sur la structure augmente fortement la part de pixels positifs, et qu'un lot plus grand fournit plus d'exemples par itération, alors que le suréchantillonnage du premier plan ne suffit pas à compenser un grand patch. La comparaison n'est toutefois pas contrôlée : l'essai par défaut n'a duré que 40 époques, et un pseudo-Dice de début d'entraînement n'est pas comparable à celui d'un entraînement avancé. C'est un indice solide, pas une preuve.
+
+\section{Reconstruction 3D}
+
+\begin{table}[H]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{ll}
+\toprule
+\textbf{Indicateur} & \textbf{Valeur} \\
+\midrule
+GPU d'inférence & Tesla T4 \\
+Volume de labels fusionné & $1059\times911\times563$ voxels, 543 M voxels \\
+Taille du voxel des labels & $10{,}0 \times 8{,}96 \times 8{,}96$ \textmu m \\
+Structures prédites & 86 / 87 (structure 7 absente) \\
+Triangles (niveau fin) & 1\,225\,624 \\
+Taille du fichier de maillages & 7,58 Mo \\
+Premier affichage (niveaux grossiers) & 0,74 Mo \\
+Inférence groupe 3 / maillages & 20 min / 314 s \\
+\bottomrule
+\end{tabular}
+\caption{Caractéristiques de la reconstruction CS17-6521.}
+\label{tab:recon}
+\end{table}
+
+La reconstruction produit \textbf{86 maillages sur 87 structures attendues}, seule la structure~7 manquant. Les plus petites structures prédites comptent de 2\,117 voxels (structure~83) à 5\,189 voxels (structure~81) dans le volume de labels réduit. Le paquet de 7,58~Mo s'affiche une première fois après 0,74~Mo grâce aux niveaux grossiers.
+
+\section{Difficultés rencontrées}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{3.4cm}p{4.9cm}p{5.5cm}}
+\toprule
+\textbf{Problème} & \textbf{Cause} & \textbf{Solution} \\
+\midrule
+Installation de VALIS impossible & Python 3.13 de Kaggle sans binaire compatible pour certaines dépendances & Environnement virtuel isolé en Python 3.11 \\
+Échec du recalage sur GPU & VALIS convertit des tenseurs GPU sans les ramener sur CPU & GPU masqué pour le recalage \\
+Évaluation faussée & Coupes réservées utilisées par nnU-Net malgré le manifeste & Retrait physique de ces coupes \\
+Mémoire insuffisante & Volume trop volumineux en nombres flottants & Percentiles sur sous-échantillon aléatoire, labels sur 8 bits \\
+Sessions limitées, disque saturé & Durée maximale des notebooks ; fichiers de validation volumineux & Reprise automatique, points de contrôle fréquents, nettoyage \\
+Groupe 2 non appris & Patch par défaut trop grand pour les petites structures & Plan à petit patch, ré-entraînement \\
+Noms erronés & Table de l'Atlas incorrecte pour CS17 & Nouvelle table de 87 noms (section~6.4) \\
+Modèle 3D trop lourd & Maillages bruts de 86 structures & Deux niveaux de détail, quantification, codage différentiel, compression \\
+\bottomrule
+\end{tabular}
+\caption[Difficultés et solutions]{Principales difficultés techniques et solutions.}
+\label{tab:difficultes}
+\end{table}
+
+Ces difficultés donnent quatre enseignements : valider l'évaluation avant les modèles (la fuite de données n'aurait pas été détectée sans vérification explicite) ; concevoir pour l'interruption, qui est ici une condition de faisabilité ; isoler les outils sensibles aux versions de bibliothèques ; interpréter les métriques avec prudence, le pseudo-Dice ne remplaçant pas une évaluation indépendante.
+
+\chapter*{Conclusion et perspectives}
+\addcontentsline{toc}{chapter}{Conclusion et perspectives}
+
+\section*{Bilan}
+
+Ce projet a permis de réaliser une chaîne complète qui transforme des coupes histologiques sériées en un modèle 3D de l'embryon humain consultable dans un navigateur. Elle associe un recalage validé sur un cas à référence connue, une segmentation de 87 structures par quatre modèles nnU-Net spécialisés sur des groupes équilibrés (Dice moyen de 0,826 sur coupes réservées), et une reconstruction de maillages adaptée au web. Quatre choix se sont révélés déterminants : la partition équilibrée des structures, la séparation physique des coupes de test, la normalisation d'intensité partagée entre entraînement et inférence, et le contrôle des métadonnées de l'Atlas, qui a conduit à une correspondance corrigée entre numéros et noms pour CS17.
+
+La chaîne est également déployée sous la forme d'une application web gratuite. L'interface réduit le déploiement à trois cas : reproduction de CS17-6521 avec les modèles du projet, autre spécimen ou coupes quelconques avec un modèle du chercheur, et téléversement de coupes brutes avec calibration physique. L'audit des notebooks a montré que la registration et la reconstruction étaient déjà largement paramétrables, mais que la configuration, le pli, le manifeste des groupes et le nom des fichiers Atlas étaient encore figés sur CS17 ; ces constantes ont été corrigées et testées, et le modèle du projet reste la valeur par défaut du premier cas.
+
+\section*{Limites}
+
+\begin{itemize}
+    \item \textbf{Un seul spécimen et un seul pli} : l'évaluation ne mesure pas la généralisation inter-spécimens, et l'absence d'ensemble limite la robustesse.
+    \item \textbf{Entraînements inachevés} : seul le groupe~3 a atteint 250 époques ; les groupes~0 à~2 sont évalués sur un point de contrôle intermédiaire.
+    \item \textbf{Segmentation 2D} : la cohérence entre coupes n'est pas imposée par le modèle et repose sur un lissage a posteriori.
+    \item \textbf{Recalage rigide uniquement}, validé partiellement (2 coupes sur 5 améliorées), avec des métriques probablement pénalisées par les zones noires dues à la rotation.
+    \item \textbf{Structure 7 non prédite} et structures minuscules parfois sans maillage.
+    \item \textbf{Nomenclature} corrigée sur l'examen d'une seule encadrante, à faire valider par d'autres anatomistes.
+    \item \textbf{Dépendance à l'infrastructure} : les quotas Kaggle et la disponibilité de Hugging Face conditionnent l'usage en temps réel.
+    \item \textbf{Cas 2 et 3 non validés quantitativement} : l'interface les rend exécutables avec un modèle adapté, mais aucun Dice inter-spécimens ni test sur des images non embryonnaires n'est fourni.
+\end{itemize}
+
+\section*{Perspectives}
+
+\begin{itemize}
+    \item terminer l'entraînement des groupes~0 à~2, les réévaluer, et étudier la structure~7 ;
+    \item recalculer les métriques de recalage sur la zone valide de l'image ;
+    \item entraîner en cinq plis et évaluer sur un second spécimen du même stade ;
+    \item passer à une segmentation 3D ou 2.5D, et ajouter un recalage non rigide contrôlé par des garde-fous anatomiques ;
+    \item étendre la chaîne à d'autres stades de Carnegie et documenter un modèle de référence pour le cas 2 ;
+    \item calculer des mesures morphométriques (volumes, dimensions, distances, positions relatives) à partir des maillages et les exposer dans l'interface ;
+    \item valider l'interface et la reconstruction avec des anatomistes, et mesurer la qualité des cas 2 et 3 sur des jeux indépendants.
+\end{itemize}
+
+\begin{thebibliography}{99}
+\addcontentsline{toc}{chapter}{Bibliographie}
+\bibitem{orahilly1987}
+R.~O'Rahilly and F.~Müller, \textit{Developmental Stages in Human Embryos}, Carnegie Institution of Washington, Publication 637, 1987.
+\bibitem{debakker2016}
+B.~S. de~Bakker \textit{et al.}, \og An interactive three-dimensional digital atlas and quantitative database of human development \fg, \textit{Science}, vol.~354, no.~6315, 2016.
+\bibitem{gatenby2023}
+C.~Gatenby \textit{et al.}, \og VALIS: Virtual Alignment of pathoLogy Image Series for multi-gigapixel whole slide images \fg, \textit{Nature Communications}, vol.~14, 2023.
+\bibitem{ronneberger2015}
+O.~Ronneberger, P.~Fischer and T.~Brox, \og U-Net: Convolutional networks for biomedical image segmentation \fg, in \textit{MICCAI}, 2015.
+\bibitem{isensee2021}
+F.~Isensee, P.~F. Jaeger, S.~A.~A. Kohl, J.~Petersen and K.~H. Maier-Hein, \og nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation \fg, \textit{Nature Methods}, vol.~18, pp.~203--211, 2021.
+\bibitem{dice1945}
+L.~R. Dice, \og Measures of the amount of ecologic association between species \fg, \textit{Ecology}, vol.~26, no.~3, pp.~297--302, 1945.
+\bibitem{lorensen1987}
+W.~E. Lorensen and H.~E. Cline, \og Marching cubes: A high resolution 3D surface construction algorithm \fg, \textit{ACM SIGGRAPH Computer Graphics}, vol.~21, no.~4, 1987.
+\bibitem{taubin1995}
+G.~Taubin, \og A signal processing approach to fair surface design \fg, in \textit{SIGGRAPH}, 1995.
+\bibitem{garland1997}
+M.~Garland and P.~S. Heckbert, \og Surface simplification using quadric error metrics \fg, in \textit{SIGGRAPH}, 1997.
+\end{thebibliography}
+
+\appendix
+\chapter{Dice par classe}
+
+Dice sur coupes réservées, par classe (identifiant de l'Atlas), trié par Dice moyen croissant. \textit{Méd.} : Dice médian ; \textit{N} : nombre de coupes évaluées.
+
+\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
+\noindent
+\begin{minipage}[t]{0.48\textwidth}
+\centering
+\begin{tabular}{rccr}
+\toprule
+\textbf{Id} & \textbf{Moy.} & \textbf{Méd.} & \textbf{N} \\
+\midrule
+10 & 0,459 & 0,000 & 31 \\
+73 & 0,655 & 0,812 & 116 \\
+70 & 0,680 & 0,843 & 117 \\
+30 & 0,683 & 0,892 & 81 \\
+38 & 0,694 & 0,799 & 20 \\
+20 & 0,713 & 0,728 & 163 \\
+26 & 0,718 & 0,840 & 46 \\
+12 & 0,787 & 0,879 & 35 \\
+43 & 0,811 & 0,889 & 169 \\
+28 & 0,812 & 0,980 & 36 \\
+53 & 0,818 & 0,929 & 34 \\
+64 & 0,826 & 0,875 & 176 \\
+41 & 0,862 & 0,955 & 45 \\
+56 & 0,875 & 0,943 & 58 \\
+14 & 0,877 & 0,964 & 34 \\
+57 & 0,886 & 0,878 & 29 \\
+58 & 0,894 & 0,921 & 26 \\
+21 & 0,896 & 0,914 & 156 \\
+45 & 0,955 & 0,967 & 211 \\
+1 & 0,962 & 0,967 & 211 \\
+76 & 0,970 & 0,986 & 210 \\
+\bottomrule
+\end{tabular}
+\captionof{table}{Groupe 0 (21 classes).}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\centering
+\begin{tabular}{rccr}
+\toprule
+\textbf{Id} & \textbf{Moy.} & \textbf{Méd.} & \textbf{N} \\
+\midrule
+71 & 0,650 & 0,788 & 32 \\
+29 & 0,760 & 0,928 & 23 \\
+35 & 0,772 & 0,810 & 52 \\
+32 & 0,778 & 0,810 & 26 \\
+3 & 0,782 & 0,917 & 21 \\
+37 & 0,812 & 0,850 & 114 \\
+19 & 0,816 & 0,942 & 8 \\
+61 & 0,825 & 0,901 & 12 \\
+23 & 0,850 & 0,938 & 15 \\
+6 & 0,850 & 0,889 & 62 \\
+34 & 0,857 & 0,903 & 85 \\
+18 & 0,864 & 0,958 & 22 \\
+59 & 0,865 & 0,928 & 22 \\
+9 & 0,865 & 0,935 & 42 \\
+60 & 0,866 & 0,872 & 18 \\
+42 & 0,883 & 0,974 & 12 \\
+48 & 0,889 & 0,984 & 11 \\
+39 & 0,891 & 0,907 & 25 \\
+4 & 0,892 & 0,932 & 50 \\
+5 & 0,902 & 0,910 & 21 \\
+11 & 0,913 & 0,951 & 38 \\
+79 & 0,953 & 0,956 & 14 \\
+\bottomrule
+\end{tabular}
+\captionof{table}{Groupe 1 (22 classes).}
+\end{minipage}
+
+\bigskip
+\noindent
+\begin{minipage}[t]{0.48\textwidth}
+\centering
+\begin{tabular}{rccr}
+\toprule
+\textbf{Id} & \textbf{Moy.} & \textbf{Méd.} & \textbf{N} \\
+\midrule
+46 & 0,567 & 0,917 & 10 \\
+74 & 0,589 & 0,852 & 6 \\
+31 & 0,623 & 0,673 & 45 \\
+87 & 0,632 & 0,883 & 7 \\
+63 & 0,659 & 0,770 & 6 \\
+24 & 0,694 & 0,813 & 13 \\
+27 & 0,723 & 0,793 & 42 \\
+33 & 0,733 & 0,884 & 6 \\
+72 & 0,735 & 0,845 & 14 \\
+62 & 0,753 & 0,802 & 12 \\
+85 & 0,754 & 0,894 & 10 \\
+25 & 0,768 & 0,822 & 23 \\
+80 & 0,775 & 0,887 & 9 \\
+82 & 0,818 & 0,913 & 12 \\
+15 & 0,840 & 0,844 & 10 \\
+16 & 0,841 & 0,871 & 12 \\
+22 & 0,856 & 0,951 & 10 \\
+36 & 0,864 & 0,877 & 21 \\
+67 & 0,880 & 0,912 & 135 \\
+49 & 0,888 & 0,955 & 27 \\
+17 & 0,924 & 0,946 & 34 \\
+47 & 0,952 & 0,966 & 29 \\
+\bottomrule
+\end{tabular}
+\captionof{table}{Groupe 2 (22 classes).}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\centering
+\begin{tabular}{rccr}
+\toprule
+\textbf{Id} & \textbf{Moy.} & \textbf{Méd.} & \textbf{N} \\
+\midrule
+78 & 0,139 & 0,000 & 6 \\
+13 & 0,410 & 0,396 & 4 \\
+68 & 0,505 & 0,718 & 5 \\
+66 & 0,601 & 0,638 & 10 \\
+54 & 0,606 & 0,752 & 10 \\
+77 & 0,623 & 0,845 & 11 \\
+2 & 0,699 & 0,922 & 4 \\
+65 & 0,720 & 0,816 & 19 \\
+55 & 0,725 & 0,744 & 14 \\
+83 & 0,739 & 0,939 & 8 \\
+84 & 0,795 & 0,866 & 9 \\
+69 & 0,809 & 0,873 & 13 \\
+75 & 0,833 & 0,854 & 4 \\
+44 & 0,837 & 0,861 & 13 \\
+51 & 0,849 & 0,919 & 26 \\
+52 & 0,854 & 0,884 & 11 \\
+81 & 0,857 & 0,949 & 6 \\
+8 & 0,861 & 0,925 & 20 \\
+86 & 0,866 & 0,866 & 2 \\
+40 & 0,909 & 0,902 & 3 \\
+50 & 0,936 & 0,946 & 6 \\
+\bottomrule
+\end{tabular}
+\captionof{table}{Groupe 3 (21 classes).}
+\end{minipage}
+\endgroup
+
+\end{document}

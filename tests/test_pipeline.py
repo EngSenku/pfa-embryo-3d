@@ -126,8 +126,10 @@ print("[5] invalid specs are rejected")
 for label, raw in [
     ("missing specimen id", {"models": {"source": "pretrained"}}),
     ("bad specimen id", {"specimen": {"id": "has spaces"}, "models": {}}),
-    ("bad engine", {"specimen": {"id": "X"}, "run": {"engine": "slurm"}}),
-    ("custom without repo", {"specimen": {"id": "X"}, "models": {"source": "custom"}}),
+    ("bad engine", {"specimen": {"id": "X", "atlas_specimen_id": "1"},
+                    "run": {"engine": "slurm"}}),
+    ("custom without repo", {"specimen": {"id": "X", "atlas_specimen_id": "1"},
+                             "models": {"source": "custom"}}),
     ("bad input format", {"specimen": {"id": "X"}, "input": {"format": "tiff-stack"}}),
     ("needed not bool", {"specimen": {"id": "X"}, "input": {"needed": "maybe"}}),
 ]:
@@ -278,6 +280,60 @@ with tempfile.TemporaryDirectory() as _td:
 check("adopts the running kernel", _waited[0] == "u/k", _waited)
 check("fetches the adopted kernel's output", ("fetched", "u/k") in _waited, _waited)
 check("never submits a duplicate", not _submitted, _submitted)
+
+# --- [10] the three deployment cases: model config/fold, Atlas probing, groups ---
+print("\n[10] deployment-case parameters")
+_demo = {
+    "title": "CS12 demo",
+    "specimen": {"id": "CS12-8505A", "description": "CS12 demo"},
+    "input": {"format": "atlas_am_volume"},
+    "models": {
+        "source": "custom", "model_repo": "me/model",
+        "configuration": "3d_fullres", "fold": 2,
+        "groups": [{"dataset_id": 811, "dataset_name": "G0", "atlas_ids": [1, 2]}],
+        "norm": {"lo": 0, "hi": 60000},
+    },
+    "reconstruction": {"bundle_title": "CS12 micro-CT"},
+}
+_ds = build_spec(_demo, run_id="run-demo")
+_reg = _ds.registration_params()
+_rec = _ds.reconstruction_params()
+check("Atlas stage/code derived from specimen id",
+      _reg["STAGE"] == "CS12" and _reg["ATLAS_SPECIMEN_ID"] == "8505A",
+      f"{_reg['STAGE']}/{_reg['ATLAS_SPECIMEN_ID']}")
+check("Atlas URL is built from stage + code",
+      _ds.atlas_urls()[0].endswith("3DAtlas_CS12-8505A-grey-v2016-01.tif"),
+      _ds.atlas_urls()[0])
+check("registration receives version candidates",
+      _reg["ATLAS_VERSION_CANDIDATES"] == ["v2016-01", "v2016-02", "v2016-03"])
+check("custom configuration is not hardcoded to 2d",
+      _rec["CONFIGURATION"] == "3d_fullres", _rec.get("CONFIGURATION"))
+check("custom fold is not hardcoded to 0", _rec["MODEL_FOLD"] == 2, _rec.get("MODEL_FOLD"))
+check("bundle title is specimen-specific",
+      _rec["BUNDLE_TITLE"] == "CS12 micro-CT", _rec.get("BUNDLE_TITLE"))
+check("inline groups become a full manifest",
+      _rec["GROUPS_JSON"]["groups"][0]["atlas_ids"] == [1, 2]
+      and _rec["GROUPS_JSON"]["normalization"]["global_hi"] == 60000)
+
+try:
+    build_spec({**_demo, "models": {
+        "source": "custom", "model_repo": "me/model",
+        "groups": [0, 1, 2, 3], "norm": {"lo": 0, "hi": 1}}})
+    check("ambiguous [0,1,2,3] groups are rejected", False, "was accepted")
+except SpecError as exc:
+    check("ambiguous [0,1,2,3] groups are rejected", "ambiguous" in str(exc), str(exc))
+
+try:
+    build_spec({
+        "specimen": {"id": "X"}, "models": {"source": "custom", "model_repo": "me/model"},
+        "input": {"format": "raw_section_archive", "raw": {
+            "mode": "local_archive", "local_path": "/tmp/sections.zip",
+            "xy_pixel_size_um": 1, "z_spacing_um": 2}},
+    })
+    check("local archive is rejected on Kaggle", False, "was accepted")
+except SpecError as exc:
+    check("local archive is rejected on Kaggle", "only works with run.engine=local" in str(exc),
+          str(exc))
 
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)

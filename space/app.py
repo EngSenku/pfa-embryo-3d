@@ -25,13 +25,16 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import sys
 import threading
 import time
+import uuid
 from pathlib import Path
+from urllib.parse import quote
 
 import yaml
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -48,7 +51,7 @@ RUNS_DIR = Path(os.environ.get("PFA_RUNS_DIR") or ("/data/pfa-runs" if Path("/da
                                                    else ROOT / "runs"))
 RUNS_DIR.mkdir(parents=True, exist_ok=True)
 LOG_TAIL_LINES = 400
-APP_VERSION = "2026-10-20.2"
+APP_VERSION = "2026-10-26.1"
 
 app = FastAPI(title="PFA pipeline", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
@@ -90,6 +93,8 @@ class FormSpec(BaseModel):
     groups_json: str = ""                           # inline manifest (custom), YAML/JSON text
     norm_lo: float | None = None
     norm_hi: float | None = None
+    model_configuration: str = "2d"                 # nnU-Net configuration
+    model_fold: int = 0                             # nnU-Net fold
     dataset_source: str = "atlas"                   # atlas | nnunet_raw
     groups: str = "0,1,2,3"
     n_groups: int = 4
@@ -137,13 +142,20 @@ def spec_from_form(f: FormSpec) -> dict:
             raise SpecError("the advanced spec must be a YAML mapping")
         return raw
 
-    spec: dict = {"title": f.title or f.specimen_id}
+    sid = f.specimen_id.strip()
+    stage = f.stage.strip()
+    atlas_code = f.atlas_specimen_id.strip()
+    if "-" in sid:
+        head, tail = sid.split("-", 1)
+        stage = stage or head
+        atlas_code = atlas_code or tail
+    spec: dict = {"title": f.title.strip() or f.description.strip() or sid}
     if f.run_id.strip():
         spec["run_id"] = f.run_id.strip()
     spec["specimen"] = {
-        "id": f.specimen_id.strip(),
-        "stage": f.stage.strip() or "CS17",
-        "atlas_specimen_id": f.atlas_specimen_id.strip(),
+        "id": sid,
+        "stage": stage or "CS17",
+        "atlas_specimen_id": atlas_code,
         "description": f.description.strip(),
     }
 
@@ -164,12 +176,28 @@ def spec_from_form(f: FormSpec) -> dict:
     inline = _inline_json(f.groups_json)
     if f.model_source == "custom":
         m["model_repo"] = f.model_repo.strip()
+        m["configuration"] = f.model_configuration.strip() or "2d"
+        m["fold"] = int(f.model_fold)
         if f.groups_manifest_in_repo.strip():
             m["groups_manifest_in_repo"] = f.groups_manifest_in_repo.strip()
         if inline is not None:
-            m["groups"] = inline if isinstance(inline, list) else inline.get("groups")
-            if isinstance(inline, dict) and inline.get("norm"):
-                m["norm"] = inline["norm"]
+            if isinstance(inline, list):
+                # [0,1,2,3] is rejected by Spec.validate() with an explanation.
+                m["groups"] = inline
+            elif isinstance(inline, dict):
+                if inline.get("groups") is not None:
+                    m["groups"] = inline["groups"]
+                if inline.get("specimen"):
+                    m["specimen"] = inline["specimen"]
+                norm = inline.get("normalization") or inline.get("norm")
+                if isinstance(norm, dict):
+                    lo = norm.get("global_lo", norm.get("lo"))
+                    hi = norm.get("global_hi", norm.get("hi"))
+                    if lo is not None and hi is not None:
+                        m["norm"] = {"lo": float(lo), "hi": float(hi)}
+            else:
+                raise SpecError("models.groups inline manifest must be a YAML/JSON list "
+                                "of group mappings or a mapping with a groups list")
         if f.norm_lo is not None or f.norm_hi is not None:
             m.setdefault("norm", {}).update({"lo": f.norm_lo, "hi": f.norm_hi})
     elif f.model_source == "train":
@@ -425,6 +453,66 @@ def specimens() -> dict:
     return {"repo": repo, "specimens": items}
 
 
+@app.post("/api/uploads")
+async def upload_archive(file: UploadFile = File(...), private: bool = Form(False)) -> dict:
+    """Upload a section archive to the Hub and return a direct HTTPS URL.
+
+    Kaggle kernels cannot read this server's disk, so the form must first put
+    the ZIP/TAR somewhere reachable.  The file is streamed to a temporary file,
+    uploaded to ``PFA_UPLOAD_REPO`` (the shared artifact repo by default), then
+    deleted.  For very large datasets, give a dataset URL instead: it avoids
+    this server's RAM/disk entirely.
+    """
+    if not hfio.token():
+        raise HTTPException(503, "HF_TOKEN is not configured on this server; "
+                                 "give an HTTPS or Hugging Face dataset link instead")
+    name = Path(file.filename or "sections.zip").name
+    suffix = "".join(Path(name).suffixes).lower()
+    allowed = (".zip", ".tar", ".tar.gz", ".tgz", ".tar.bz2", ".tbz2",
+               ".tar.xz", ".txz", ".rar")
+    if not any(suffix.endswith(ext) for ext in allowed):
+        raise HTTPException(415, f"unsupported archive type {suffix or '(none)'}; "
+                                 f"use one of {', '.join(allowed)}")
+    try:
+        max_mb = int(os.environ.get("PFA_MAX_UPLOAD_MB", "2048"))
+    except ValueError:
+        max_mb = 2048
+    max_bytes = max_mb * 1024 * 1024
+    repo = os.environ.get("PFA_UPLOAD_REPO") or _shared_repo()
+    token_dir = RUNS_DIR / "_uploads" / uuid.uuid4().hex
+    token_dir.mkdir(parents=True, exist_ok=True)
+    tmp = token_dir / name
+    size = 0
+    try:
+        with tmp.open("wb") as fh:
+            while chunk := await file.read(1024 * 1024):
+                size += len(chunk)
+                if size > max_bytes:
+                    raise HTTPException(413, f"archive larger than PFA_MAX_UPLOAD_MB={max_mb}; "
+                                             "use a dataset link instead")
+                fh.write(chunk)
+        if size == 0:
+            raise HTTPException(400, "empty archive")
+        path = f"uploads/{token_dir.name}/{name}"
+        api = hfio.api()
+        api.create_repo(repo, repo_type="dataset", private=private, exist_ok=True)
+        api.upload_file(path_or_fileobj=str(tmp), path_in_repo=path, repo_id=repo,
+                        repo_type="dataset", commit_message=f"upload {name}")
+    except HTTPException:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(502, f"Hugging Face upload failed: {exc}") from exc
+    finally:
+        shutil.rmtree(token_dir, ignore_errors=True)
+    return {
+        "repo": repo,
+        "path": path,
+        "bytes": size,
+        "private": bool(private),
+        "url": f"https://huggingface.co/datasets/{repo}/resolve/main/{quote(path)}",
+    }
+
+
 @app.post("/api/plan")
 def plan(form: FormSpec) -> dict:
     try:
@@ -525,8 +613,9 @@ def _mount() -> None:
 
 @app.get("/api")
 def api_index() -> dict:
-    return {"endpoints": ["/api/version", "/api/health", "/api/specimens", "/api/plan", "/api/runs",
-                          "/api/runs/{run_id}", "/api/runs/{run_id}/log"]}
+    return {"endpoints": ["/api/version", "/api/health", "/api/specimens", "/api/uploads",
+                          "/api/plan", "/api/runs", "/api/runs/{run_id}",
+                          "/api/runs/{run_id}/log"]}
 
 
 _mount()

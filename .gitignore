@@ -17,3 +17,7 @@ kaggle.json
 # local downloads / build output
 *_dl/
 *.prepared.ipynb
+report_pfa/*.log
+report_pfa/*.aux
+report_pfa/*.out
+report_pfa/*.toc

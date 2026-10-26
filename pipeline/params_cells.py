@@ -58,6 +58,10 @@ DEFAULTS: dict[str, dict] = {
         "SPECIMEN_ID": "CS17-6521",
         "SPECIMEN_DESC": "Carnegie Stage 17, specimen 6521",
         "SPECIMEN_FORMAT": "atlas_am_volume",
+        "STAGE": "CS17",
+        "ATLAS_SPECIMEN_ID": "6521",
+        "ATLAS_BASE_URLS": ["http://3datlas.3dembryo.nl", "https://3datlas.3dembryo.nl"],
+        "ATLAS_VERSION_CANDIDATES": ["v2016-01", "v2016-02", "v2016-03"],
         "ATLAS_GREY_TIF_URL": "http://3datlas.3dembryo.nl/3DAtlas_CS17-6521-grey-v2016-01.tif",
         "ATLAS_AM_URL": "http://3datlas.3dembryo.nl/3DAtlas_CS17-6521-grey-v2016-01.am",
         "RAW_INPUT_MODE": "url",
@@ -85,6 +89,9 @@ DEFAULTS: dict[str, dict] = {
         "HF_DATASET_REPO_ID": "senku111/atlas-cs17-4groups-dataset",
         "HF_TRAINING_REPO_ID": "senku111/atlas-cs17-4groups-nnunet-training",
         "N_GROUPS": 4,
+        "CONFIGURATION": "2d",
+        "MODEL_FOLD": 0,
+        "BUNDLE_TITLE": None,
         "MODEL_SOURCE": "existing",
         "MODEL_REPO": None,
         "GROUPS_MANIFEST_IN_REPO": None,
@@ -260,6 +267,12 @@ SPECIMEN_DESC = "Carnegie Stage 17, specimen 6521"
 SPECIMEN_FORMAT = "atlas_am_volume"
 
 # --- atlas input (SPECIMEN_FORMAT == "atlas_am_volume") ---
+# Filenames differ by stage and by Atlas release. If the explicit URL is missing,
+# the notebook probes these bases and version suffixes against the live server.
+STAGE = "CS17"
+ATLAS_SPECIMEN_ID = "6521"
+ATLAS_BASE_URLS = ["http://3datlas.3dembryo.nl", "https://3datlas.3dembryo.nl"]
+ATLAS_VERSION_CANDIDATES = ["v2016-01", "v2016-02", "v2016-03"]
 ATLAS_GREY_TIF_URL = "http://3datlas.3dembryo.nl/3DAtlas_CS17-6521-grey-v2016-01.tif"
 ATLAS_AM_URL = "http://3datlas.3dembryo.nl/3DAtlas_CS17-6521-grey-v2016-01.am"
 
@@ -312,6 +325,11 @@ HF_DATASET_REPO_ID = "senku111/atlas-cs17-4groups-dataset"
 HF_TRAINING_REPO_ID = "senku111/atlas-cs17-4groups-nnunet-training"
 N_GROUPS = 4
 
+# --- nnU-Net configuration and fold ---
+# Researchers may publish 3d_fullres / 3d_lowres models, and a fold other than 0.
+CONFIGURATION = "2d"
+MODEL_FOLD = 0
+
 # ============================ SEGMENTATION MODEL ============================
 # "existing" -> use HF_TRAINING_REPO_ID (+ HF_DATASET_REPO_ID for the manifest).
 #               Works for any specimen of the stage the models were trained on.
@@ -328,6 +346,8 @@ GROUPS_JSON = None
 # Optional normalisation override (must match how the model was trained).
 NORM_OVERRIDE_LO = None
 NORM_OVERRIDE_HI = None
+# Title stored in the viewer bundle. None shows the specimen id.
+BUNDLE_TITLE = None
 
 # --- checkpoint choice per group ---
 CHECKPOINT_POLICY = "auto"       # "auto": final if it exists else best | "final" | "best" | "latest"
