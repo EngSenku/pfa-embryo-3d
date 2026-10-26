@@ -140,7 +140,7 @@ Ce projet a pour objectif de développer une chaîne computationnelle permettant
 
 L'embryon humain constitue le cas d'étude principal de ce travail. Cette application est particulièrement pertinente en raison de la complexité de l'organisation anatomique embryonnaire, de la petite taille de nombreuses structures et des transformations morphologiques rapides qui caractérisent le développement. Dans ce contexte, l'IRM permet d'obtenir une représentation tridimensionnelle de l'embryon mais ne fournit pas le niveau de détail anatomique nécessaire à la reconstruction tridimensionnelle fine des structures embryonnaires. L'histologie sériée constitue donc une source essentielle d'information pour accéder à cette précision anatomique, tout en nécessitant une reconstruction computationnelle pour retrouver l'organisation spatiale complète.
 
-La chaîne développée est appliquée à différents stades du développement embryonnaire, avec une adaptation des modèles de segmentation aux caractéristiques anatomiques propres à chaque stade. Les reconstructions obtenues ne constituent pas uniquement des modèles de visualisation : elles offrent une représentation tridimensionnelle permettant d'étudier les volumes, les dimensions, les positions et les relations spatiales entre les structures anatomiques. Elles fournissent ainsi une base pour l'analyse quantitative de l'organisation et de l'évolution de l'anatomie embryonnaire au cours du développement.
+La chaîne est conçue pour l'histologie sériée en général ; l'embryon humain en constitue le cas de validation principal. Elle est évaluée quantitativement sur CS17-6521 pour la segmentation et la reconstruction 3D, et le recalage est contrôlé sur cinq coupes de CS15-3512. Les reconstructions obtenues ne constituent pas uniquement des modèles de visualisation : elles offrent une représentation tridimensionnelle permettant d'étudier les volumes, les dimensions, les positions et les relations spatiales entre les structures anatomiques. Le visualiseur expose déjà ces mesures et permet de les exporter ; leur validation anatomique reste toutefois à mener. Les cas 2 et 3 sont exécutables avec un modèle adapté, mais ne sont pas encore validés quantitativement.
 
 La chaîne HistoWeave est exposée sous la forme d'une application web gratuite qui distingue trois cas de déploiement : reproduire un spécimen CS17 (CS17-6521 ou un autre spécimen du même stade) avec les modèles du projet, soumettre un autre embryon depuis l'Atlas ou une archive avec un modèle fourni par le chercheur, ou téléverser des coupes quelconques, embryonnaires ou non, avec ce modèle et leur échelle physique. Le calcul reste délégué à Kaggle et les artefacts sont publiés sur Hugging Face.
 
@@ -155,7 +155,7 @@ This project aims to develop a computational pipeline for transforming serial tw
 
 The human embryo is used as the main case study. This application is particularly relevant because of the complexity of embryonic anatomy, the small size of many anatomical structures, and the rapid morphological changes occurring throughout development. In this context, MRI provides a three-dimensional representation of the embryo but does not provide the level of anatomical detail required for fine three-dimensional reconstruction of embryonic structures. Serial histology therefore provides an essential source of high-resolution anatomical information, while computational reconstruction is required to recover its complete spatial organization.
 
-The developed pipeline is applied to different stages of embryonic development, with segmentation models adapted to the anatomical characteristics of each stage. The resulting reconstructions are not limited to visualization: they provide three-dimensional representations that can be used to study the volume, dimensions, position, and spatial relationships of anatomical structures. The proposed approach therefore provides a basis for the quantitative analysis of embryonic anatomy and its evolution throughout development.
+The pipeline is designed for serial histology in general; the human embryo is its main validation case. It is evaluated quantitatively on CS17-6521 for segmentation and 3D reconstruction, while registration is checked on five sections from CS15-3512. The resulting reconstructions are not limited to visualization: they provide three-dimensional representations that can be used to study the volume, dimensions, position, and spatial relationships of anatomical structures. The viewer already exposes these measurements and supports exporting them; their anatomical validation remains to be done. Cases 2 and 3 are executable with a suitable model, but are not yet quantitatively validated.
 
 HistoWeave is exposed through a free web application with three deployment cases: reproduce a CS17 specimen (CS17-6521 or another specimen at the same stage) with the project models, submit another embryo from the Atlas or an archive with a researcher-supplied model, or upload arbitrary sections, embryonic or not, with that model and their physical scale. Computation stays on Kaggle and the artefacts are published on Hugging Face.
 
@@ -202,7 +202,7 @@ La question posée est donc la suivante :
 L'objectif est de développer une chaîne complète allant de l'image histologique brute à un modèle 3D interactif. Les contributions sont les suivantes :
 \begin{itemize}
     \item une \textbf{chaîne modulaire en quatre étapes} reproductibles (recalage, préparation des données, entraînement, reconstruction 3D), reliées par des fichiers versionnés et vérifiés par empreinte SHA-256 ;
-    \item une \textbf{validation quantitative du recalage} sur un cas à vérité terrain connue ;
+    \item une \textbf{évaluation quantitative du recalage} sur un cas à vérité terrain connue ;
     \item une \textbf{segmentation par groupes équilibrés} : les 87 structures du stade Carnegie 17 (CS17) sont réparties en quatre groupes de tailles comparables, chacun doté de son propre modèle nnU-Net, pour que les grandes structures ne dominent pas l'apprentissage ;
     \item un \textbf{format de maillages 3D compact}, à niveaux de détail multiples, adapté à l'affichage dans un navigateur ;
     \item une \textbf{correspondance corrigée entre numéros et noms} des structures de CS17, la table fournie par l'Atlas s'étant révélée erronée ;
@@ -268,7 +268,7 @@ L'algorithme des \textbf{marching cubes} \cite{lorensen1987} extrait d'un volume
 
 \section{Positionnement}
 
-Ce projet ne propose pas de nouvel algorithme de recalage ou de segmentation. Il \textbf{assemble, valide et rend utilisables} des méthodes éprouvées dans une chaîne destinée à des chercheurs non spécialistes du traitement d'images. L'originalité est dans l'ensemble : validation du recalage, partition équilibrée des structures, évaluation sur des coupes jamais vues, correction des noms et affichage 3D sur le web.
+Une revue systématique récente \cite{kurz2024} recense les travaux de reconstruction 3D à partir de coupes histopathologiques ; elle souligne la diversité des chaînes et l'importance du recalage, de la segmentation et de la validation. Ce projet ne propose pas de nouvel algorithme de recalage ou de segmentation. Il \textbf{assemble, valide et rend utilisables} des méthodes éprouvées dans une chaîne destinée à des chercheurs non spécialistes du traitement d'images. L'originalité est dans l'ensemble : évaluation du recalage, partition équilibrée des structures, évaluation sur des coupes jamais vues, correction des noms et affichage 3D sur le web.
 
 \chapter{Données et architecture}\label{ch:data}
 
@@ -282,7 +282,7 @@ Deux spécimens de l'Atlas sont utilisés (tableau~\ref{tab:specimens}).
 \toprule
 \textbf{Spécimen} & \textbf{Stade} & \textbf{Rôle} & \textbf{Étape} \\
 \midrule
-CS15-3512 & Carnegie 15 & Validation du recalage & Recalage \\
+CS15-3512 & Carnegie 15 & Évaluation du recalage & Recalage \\
 CS17-6521 & Carnegie 17 & Entraînement, inférence, 3D & Toutes \\
 \bottomrule
 \end{tabular}
@@ -377,7 +377,7 @@ Pour prouver que la configuration de recalage fonctionne, on la compare à une r
 \textbf{Médiane} & & & 17,692 & 14,729 & 0,6083 & 0,6643 \\
 \bottomrule
 \end{tabular}
-\caption[Validation du recalage (MAE et NCC)]{Validation du recalage : perturbation (rotation, translation en pixels), MAE et NCC avant et après.}
+\caption[Évaluation du recalage (MAE et NCC)]{Évaluation du recalage : perturbation (rotation, translation en pixels), MAE et NCC avant et après.}
 \label{tab:resA}
 \end{table}
 
@@ -387,7 +387,7 @@ La MAE médiane passe de 17,69 à 14,73 (environ 17\,\% de réduction) et la NCC
 
 Une partie de cette dégradation peut venir du mode de calcul : la rotation laisse des zones noires dans les angles des coupes recalées (figure~\ref{fig:regcomp}), alors que le fond des images originales est blanc. Si les métriques portent sur l'image entière, ces zones ajoutent une erreur même quand l'embryon est bien aligné. Un calcul limité à la zone valide permettrait de le vérifier.
 
-\safeimg{registration_comparison.jpg}{0.95\textwidth}{Validation du recalage pour les coupes 323 à 327 : coupes originales (haut), perturbées (milieu) et recalées par VALIS (bas). Les zones noires aux angles proviennent de la rotation ; elles ne font pas partie du tissu.}{fig:regcomp}{Recalage VALIS : coupes 323 à 327}
+\safeimg{registration_comparison.jpg}{0.95\textwidth}{Évaluation du recalage pour les coupes 323 à 327 : coupes originales (haut), perturbées (milieu) et recalées par VALIS (bas). Les zones noires aux angles proviennent de la rotation ; elles ne font pas partie du tissu.}{fig:regcomp}{Recalage VALIS : coupes 323 à 327}
 
 \subsection{Portée}
 
@@ -424,7 +424,7 @@ Les principales étapes sont les suivantes :
     \item \textbf{Publication} : envoi sur Hugging Face, puis export de chaque coupe en image WebP, avec une fenêtre d'intensité identique pour toutes. Le visualiseur affiche ainsi la coupe sous le curseur par une simple requête d'environ 100 à 200~Ko, sans lire un fichier de plusieurs centaines de mégaoctets.
 \end{enumerate}
 
-Le recalage non rigide corrige plus de défauts mais risque de déformer des structures réelles pour les rendre plus cohérentes. La production utilise donc par défaut le \textbf{recalage rigide}, conformément à la validation ; le recalage non rigide n'est activé que sur demande explicite.
+Le recalage non rigide corrige plus de défauts mais risque de déformer des structures réelles pour les rendre plus cohérentes. La production utilise donc par défaut le \textbf{recalage rigide}, conformément à l'évaluation ; le recalage non rigide n'est activé que sur demande explicite.
 
 \chapter{Segmentation}\label{ch:seg}
 
@@ -601,7 +601,9 @@ La plateforme HistoWeave est déployée à l'adresse \url{https://pfa-embryo-3d.
 
 Le formulaire produit le même fichier YAML que la ligne de commande. Ce spec contient le spécimen, le format d'entrée, les dépôts Hugging Face, le modèle, la configuration et le pli, la reconstruction et le moteur d'exécution ; il est enregistré à côté des notebooks exécutés, ce qui rend chaque lancement reproductible. Le bouton \textbf{Preview} affiche les étapes et le YAML sans rien exécuter ; \textbf{Run} pousse les noyaux et affiche l'état, le journal et le lien du visualiseur. À la fin, le volume recalé, les coupes WebP et le paquet de maillages sont publiés dans \texttt{volumes/<id>/}, \texttt{slices/<id>/} et \texttt{viewers/<id>/} du dépôt Hugging Face choisi, tandis que l'état du lancement est recopié dans \texttt{runs/<id>/state.json}. Le bouton \textbf{Open the 3D model} ouvre \texttt{/viewer/?specimen=<id>\&repo=<dépôt>} ; le sélecteur du visualiseur liste tous les paquets \texttt{viewers/*/manifest.json} du dépôt, et non un seul cas. Le visualiseur lit ces artefacts directement depuis Hugging Face, ce qui suppose un dépôt public pour un lien partageable.
 
-\safeimg{screenshots/viewer.png}{0.96\textwidth}{Visualiseur 3D d'HistoWeave pour le paquet publié CS17-6521. Le sélecteur de spécimen est alimenté par les paquets \texttt{viewers/<id>/} présents sur Hugging Face ; il n'est donc pas limité à ce cas.}{fig:interfaceviewer}{Visualiseur 3D d'un paquet publié}
+\safeimg{screenshots/viewer.png}{0.96\textwidth}{Visualiseur 3D d'HistoWeave pour le paquet publié CS17-6521. Le panneau de droite regroupe les cartes \textbf{Biometrics} (volume, surface, dimensions, position, Dice de coupe réservée) et le panneau \textbf{Structures} ; le sélecteur de spécimen est alimenté par les paquets \texttt{viewers/<id>/} présents sur Hugging Face.}{fig:interfaceviewer}{Visualiseur 3D d'un paquet publié}
+
+Le visualiseur ne se limite pas à l'affichage du modèle. L'onglet \textbf{Biometrics} présente, pour chaque structure, son volume, sa surface, ses dimensions, sa position et, lorsqu'il est disponible, son Dice de coupe réservée ; les cartes peuvent être filtrées par groupe et recherchées par nom. Le panneau \textbf{Structures} permet d'isoler une structure, de la recentrer ou de l'exploser ; le curseur sur le modèle affiche la coupe histologique correspondante, que l'on peut épingler. Les maillages sont chargés par niveaux de détail, ce qui permet un premier affichage avant le modèle complet. Le menu \textbf{Export} produit un CSV des mesures, une image PNG de la vue courante ou un résumé textuel. Le volume affiché provient du volume de labels, tandis que la surface et les dimensions sont calculées sur le maillage ; leur sensibilité au lissage et à la décimation est examinée en section~\ref{sec:mesh-validation}.
 
 \subsection{Audit de généralisation des notebooks}
 
@@ -629,11 +631,19 @@ Modèle du chercheur & aucun chemin dans le formulaire pour fournir un modèle &
 
 Après correction, le cas 2 accepte un autre embryon, depuis l'Atlas ou une archive, à condition que le modèle du chercheur ait été entraîné pour ces images. Le cas 3 accepte des coupes quelconques, embryonnaires ou non, avec le même chemin de téléversement et la même calibration physique. Le cas 1 conserve les modèles du projet et retrouve le manifeste des quatre groupes même si le dépôt du jeu d'entraînement est privé ou absent : les \texttt{dataset.json} publiés avec les points de contrôle contiennent déjà la correspondance entre noms de classes et identifiants de l'Atlas, et la plage de normalisation CS17 est appliquée. Ce repli ne remplace pas un manifeste pour un modèle inconnu ; il évite seulement de bloquer la reproduction du projet.
 
-La généralisation a toutefois des limites qu'il faut expliciter. Un modèle entraîné sur CS17 ne segmente pas correctement un autre stade ou un autre tissu : le formulaire ne réentraîne rien, il exige un modèle adapté. La qualité du recalage dépend de la coloration, des plis et des déchirures, et n'a été validée que sur cinq coupes de CS15. Enfin, aucun résultat quantitatif n'est fourni pour les cas 2 et 3 : l'interface les rend exécutables, elle ne prouve pas leur exactitude anatomique. Ces points restent des perspectives de validation, pas des fonctionnalités cachées.
+La généralisation a toutefois des limites qu'il faut expliciter. Un modèle entraîné sur CS17 ne segmente pas correctement un autre stade ou un autre tissu : le formulaire ne réentraîne rien, il exige un modèle adapté. La qualité du recalage dépend de la coloration, des plis et des déchirures, et n'a été évaluée que sur cinq coupes de CS15. Enfin, aucun résultat quantitatif n'est fourni pour les cas 2 et 3 : l'interface les rend exécutables, elle ne prouve pas leur exactitude anatomique. Ces points restent des perspectives de validation, pas des fonctionnalités cachées.
 
 \subsection{Déploiement et exploitation}
 
 Le service tient sur l'offre gratuite : Render endort le conteneur après environ quinze minutes sans trafic et son disque est éphémère. L'état de chaque lancement est donc recopié dans \texttt{runs/<id>/state.json} sur Hugging Face, et le serveur reprend un lancement interrompu au lieu de le perdre ; un noyau Kaggle déjà en cours est adopté plutôt que dupliqué. Après chaque \texttt{git push}, le service public doit être redéployé manuellement par \textbf{Manual Deploy} puis \textbf{Deploy latest commit} ; la route \texttt{/api/version} permet de vérifier le numéro de version et le commit réellement servis.
+
+\subsection{Reproductibilité et tests}
+
+Le code est couvert par 57 tests automatisés. \texttt{tests/test\_pipeline.py} vérifie la construction du spec, les trois cas de déploiement, les chemins de paramètres, les garde-fous du cas~1 et la reprise d'un noyau Kaggle en cours ; \texttt{tests/test\_params.py} vérifie que les paramètres par défaut existent, que les cellules de configuration s'exécutent ensemble et que l'injection Papermill reste correcte. Des tests de fumée contrôlent \texttt{/api/version}, \texttt{/api/health}, le titre OpenAPI, le formulaire et le visualiseur. Le spec YAML, le journal et l'état du lancement sont conservés, et la route \texttt{/api/version} renvoie la version applicative et le commit servi.
+
+\subsection{Disponibilité, éthique et limites d'exploitation}
+
+Le code est disponible à l'adresse \url{https://github.com/EngSenku/pfa-embryo-3d}. Les artefacts publics (volume recalé, coupes WebP, paquets de maillages et état des lancements) sont publiés dans le jeu de données \url{https://huggingface.co/datasets/senku111/embryo-3d}. Les données histologiques proviennent de l'Atlas 3D du développement humain \cite{debakker2016} et restent soumises à ses conditions d'utilisation ; aucun nouveau prélèvement humain n'a été réalisé. Les dépôts de modèles et de données d'entraînement peuvent être privés, mais un lien de visualisation partageable suppose un dépôt public. Les conditions de réutilisation du code produit seront précisées avec l'établissement.
 
 \chapter{Résultats et discussion}\label{ch:res}
 
@@ -737,6 +747,53 @@ Inférence groupe 3 / maillages & 20 min / 314 s \\
 
 La reconstruction produit \textbf{86 maillages sur 87 structures attendues}, seule la structure~7 manquant. Les plus petites structures prédites comptent de 2\,117 voxels (structure~83) à 5\,189 voxels (structure~81) dans le volume de labels réduit. Le paquet de 7,58~Mo s'affiche une première fois après 0,74~Mo grâce aux niveaux grossiers.
 
+\subsection{Validation géométrique des maillages}\label{sec:mesh-validation}
+
+Le tableau~\ref{tab:recon} mesure la taille et le temps, pas la fidélité géométrique. Pour combler ce manque, le paquet publié a été décodé et le volume de chaque maillage a été calculé par somme signée des tétraèdres, puis comparé au volume de labels du manifeste. La surface est calculée sur le maillage.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lr}
+\toprule
+\textbf{Indicateur} & \textbf{Valeur} \\
+\midrule
+Volume de labels (86 structures) & 136,12~mm$^3$ \\
+Volume des maillages au dernier niveau de détail & 135,36~mm$^3$ ($-0{,}55$\,\%) \\
+Volume des maillages grossiers & 134,74~mm$^3$ ($-1{,}01$\,\%) \\
+Erreur absolue médiane, 86 structures & 22,5\,\% \\
+Erreur absolue médiane, 34 structures $\geq 0{,}1$~mm$^3$ & 6,4\,\% \\
+Erreur absolue médiane, 13 structures $\geq 1$~mm$^3$ & 4,7\,\% \\
+\bottomrule
+\end{tabular}
+\caption{Comparaison du volume de labels et du volume des maillages publiés pour CS17-6521.}
+\label{tab:mesh-validation}
+\end{table}
+
+Le volume total est donc proche ($-0{,}55$\,\% pour les maillages au dernier niveau, $-1{,}01$\,\% pour les grossiers), mais l'accord par structure est très variable. Les petites structures peuvent perdre plus de 90\,\% de leur volume (structures 31, 6 et 67) ; le lissage de Taubin et la décimation QEM expliquent probablement cette sous-estimation. Le volume affiché dans le visualiseur est celui des voxels de labels, tandis que la surface et les dimensions sont des estimations issues du maillage. Une validation par distance de surface (Chamfer ou Hausdorff) et une comparaison à une vérité terrain 3D restent à faire ; le volume total ne suffit pas à garantir la fidélité des petites structures.
+
+\subsection{Matrice de validation}
+
+Le tableau~\ref{tab:validation} résume ce qui est démontré, ce qui est seulement rendu possible, et ce qui reste à valider. Cette distinction évite de présenter les cas 2 et 3 comme validés alors qu'ils sont seulement exécutables.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}p{2.3cm}Xp{2.9cm}@{}}
+\toprule
+\textbf{Objet} & \textbf{Preuve disponible} & \textbf{Statut} \\
+\midrule
+Recalage & CS15-3512, 5 coupes, MAE et NCC avant/après ; 2 coupes sur 5 améliorées & Partiel \\
+Segmentation & CS17-6521, coupes réservées, Dice moyen 0,826 ; 86 structures sur 87 prédites & Quantitatif, un spécimen \\
+Maillages & Volume total à $-0{,}55$\,\% ; erreurs fortes sur les petites structures & Partiel \\
+Visualiseur & 57 tests de la chaîne, tests de fumée du visualiseur, version et OpenAPI vérifiés & Fonctionnel, pas d'étude utilisateur \\
+Cas 2 et 3 & Exécutables avec un modèle adapté & Non validés quantitativement \\
+\bottomrule
+\end{tabularx}
+\caption{Matrice de validation : ce qui est prouvé, ce qui est opérationnel et ce qui reste à évaluer.}
+\label{tab:validation}
+\end{table}
+
 \section{Difficultés rencontrées}
 
 \begin{table}[H]
@@ -767,7 +824,7 @@ Ces difficultés donnent quatre enseignements : valider l'évaluation avant les 
 
 \section*{Bilan}
 
-Ce projet a permis de réaliser une chaîne complète qui transforme des coupes histologiques sériées en un modèle 3D de l'embryon humain consultable dans un navigateur. Elle associe un recalage validé sur un cas à référence connue, une segmentation de 87 structures par quatre modèles nnU-Net spécialisés sur des groupes équilibrés (Dice moyen de 0,826 sur coupes réservées), et une reconstruction de maillages adaptée au web. Quatre choix se sont révélés déterminants : la partition équilibrée des structures, la séparation physique des coupes de test, la normalisation d'intensité partagée entre entraînement et inférence, et le contrôle des métadonnées de l'Atlas, qui a conduit à une correspondance corrigée entre numéros et noms pour CS17.
+Ce projet a permis de réaliser une chaîne complète qui transforme des coupes histologiques sériées en un modèle 3D de l'embryon humain consultable dans un navigateur. Elle associe un recalage évalué quantitativement sur un cas à référence connue (gain sur 2 coupes sur 5), une segmentation ciblant 87 structures, dont 86 effectivement prédites, par quatre modèles nnU-Net spécialisés sur des groupes équilibrés (Dice moyen de 0,826 sur coupes réservées), et une reconstruction de maillages adaptée au web. Quatre choix se sont révélés déterminants : la partition équilibrée des structures, la séparation physique des coupes de test, la normalisation d'intensité partagée entre entraînement et inférence, et le contrôle des métadonnées de l'Atlas, qui a conduit à une correspondance corrigée entre numéros et noms pour CS17.
 
 La chaîne est également déployée sous la forme d'une application web gratuite. L'interface réduit le déploiement à trois cas : reproduction d'un spécimen CS17 avec les modèles du projet, autre embryon avec un modèle du chercheur, et coupes quelconques avec ce modèle et leur calibration physique. L'audit des notebooks a montré que la registration et la reconstruction étaient déjà largement paramétrables, mais que la configuration, le pli, le manifeste des groupes et le nom des fichiers Atlas étaient encore figés sur CS17 ; ces constantes ont été corrigées et testées, et le modèle du projet reste la valeur par défaut du premier cas.
 
@@ -777,8 +834,9 @@ La chaîne est également déployée sous la forme d'une application web gratuit
     \item \textbf{Un seul spécimen et un seul pli} : l'évaluation ne mesure pas la généralisation inter-spécimens, et l'absence d'ensemble limite la robustesse.
     \item \textbf{Entraînements inachevés} : seul le groupe~3 a atteint 250 époques ; les groupes~0 à~2 sont évalués sur un point de contrôle intermédiaire.
     \item \textbf{Segmentation 2D} : la cohérence entre coupes n'est pas imposée par le modèle et repose sur un lissage a posteriori.
-    \item \textbf{Recalage rigide uniquement}, validé partiellement (2 coupes sur 5 améliorées), avec des métriques probablement pénalisées par les zones noires dues à la rotation.
+    \item \textbf{Recalage rigide uniquement}, évalué partiellement (2 coupes sur 5 améliorées), avec des métriques probablement pénalisées par les zones noires dues à la rotation.
     \item \textbf{Structure 7 non prédite} et structures minuscules parfois sans maillage.
+    \item \textbf{Validation géométrique partielle des maillages} : le volume total est proche du volume de labels, mais les petites structures peuvent être fortement sous-estimées par le lissage et la décimation ; il n'existe pas de vérité terrain 3D complète.
     \item \textbf{Nomenclature} corrigée sur l'examen d'une seule encadrante, à faire valider par d'autres anatomistes.
     \item \textbf{Dépendance à l'infrastructure} : les quotas Kaggle et la disponibilité de Hugging Face conditionnent l'usage en temps réel.
     \item \textbf{Cas 2 et 3 non validés quantitativement} : l'interface les rend exécutables avec un modèle adapté, mais aucun Dice inter-spécimens ni test sur des images non embryonnaires n'est fourni.
@@ -792,7 +850,7 @@ La chaîne est également déployée sous la forme d'une application web gratuit
     \item entraîner en cinq plis et évaluer sur un second spécimen du même stade ;
     \item passer à une segmentation 3D ou 2.5D, et ajouter un recalage non rigide contrôlé par des garde-fous anatomiques ;
     \item étendre la chaîne à d'autres stades de Carnegie et documenter un modèle de référence pour le cas 2 ;
-    \item calculer des mesures morphométriques (volumes, dimensions, distances, positions relatives) à partir des maillages et les exposer dans l'interface ;
+    \item valider anatomiquement les mesures déjà exposées dans le visualiseur (volumes, surfaces, dimensions, positions) et ajouter les distances et relations relatives entre structures ;
     \item valider l'interface et la reconstruction avec des anatomistes, et mesurer la qualité des cas 2 et 3 sur des jeux indépendants.
 \end{itemize}
 
@@ -802,6 +860,8 @@ La chaîne est également déployée sous la forme d'une application web gratuit
 R.~O'Rahilly and F.~Müller, \textit{Developmental Stages in Human Embryos}, Carnegie Institution of Washington, Publication 637, 1987.
 \bibitem{debakker2016}
 B.~S. de~Bakker \textit{et al.}, \og An interactive three-dimensional digital atlas and quantitative database of human development \fg, \textit{Science}, vol.~354, no.~6315, 2016.
+\bibitem{kurz2024}
+A.~Kurz \textit{et al.}, \og 3-dimensional reconstruction from histopathological sections: a systematic review \fg, \textit{Laboratory Investigation}, vol.~104, 102049, 2024.
 \bibitem{gatenby2023}
 C.~Gatenby \textit{et al.}, \og VALIS: Virtual Alignment of pathoLogy Image Series for multi-gigapixel whole slide images \fg, \textit{Nature Communications}, vol.~14, 2023.
 \bibitem{ronneberger2015}
